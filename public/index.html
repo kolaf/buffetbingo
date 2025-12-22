@@ -413,17 +413,18 @@
             
             <div class="mt-12 bg-white p-8 rounded-2xl shadow-sm border border-gray-100">
                 <h3 class="text-lg font-bold mb-4 text-center">The Equation</h3>
-                <div class="flex flex-wrap justify-center items-center gap-4 text-sm md:text-base font-mono bg-gray-50 p-6 rounded-xl border border-gray-200 text-center">
-                    <span class="bg-blue-100 px-2 py-1 rounded">Taste</span>
-                    <span>+</span>
-                    <span class="bg-purple-100 px-2 py-1 rounded">Cohesion</span>
-                    <span>+</span>
-                    <span class="bg-green-100 px-2 py-1 rounded">(11 - Regret)</span>
-                    <span>+</span>
-                    <span class="bg-rose-100 px-2 py-1 rounded">(11 - Waste)</span>
-                    <div class="w-full flex justify-center border-t border-gray-300 pt-2">
-                        <span>/ 4</span>
+                <div class="flex flex-col items-center text-sm md:text-base font-mono bg-gray-50 p-6 rounded-xl border border-gray-200 text-center">
+                    <div class="flex flex-wrap justify-center items-center gap-3 pb-3 w-full">
+                        <span class="bg-blue-100 px-2 py-1 rounded">Taste</span>
+                        <span class="text-gray-400">+</span>
+                        <span class="bg-purple-100 px-2 py-1 rounded">Cohesion</span>
+                        <span class="text-gray-400">+</span>
+                        <span class="bg-green-100 px-2 py-1 rounded">(11 - Regret)</span>
+                        <span class="text-gray-400">+</span>
+                        <span class="bg-rose-100 px-2 py-1 rounded">(11 - Waste)</span>
                     </div>
+                    <div class="w-full border-t-2 border-gray-300"></div>
+                    <div class="pt-2 font-bold text-lg text-gray-600">4</div>
                 </div>
                 <p class="text-xs text-center text-gray-400 mt-4 italic">The result is rounded to the nearest tenth.</p>
             </div>
@@ -699,11 +700,11 @@
                                 <div><strong>Date:</strong> ________________</div>
                                 <div><strong>Location:</strong> ___________________________________</div>
                             </div>
-                        </div>
+                    </div>
                         
-                        <table>
-                            <thead>
-                                <tr>
+                    <table>
+                        <thead>
+                            <tr>
                                     <th>#</th>
                                     <th>Player Name</th>
                                     <th>Taste</th>
@@ -711,12 +712,12 @@
                                     <th>Regret</th>
                                     <th>Waste</th>
                                     <th>Total</th>
-                                </tr>
-                            </thead>
-                            <tbody>
-                                ${tableRows}
-                            </tbody>
-                        </table>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            ${tableRows}
+                        </tbody>
+                    </table>
 
                         <div class="formula-box">
                             <div style="margin-bottom:12px"><strong>Scoring Formula:</strong> (Taste + Cohesion + (11 - Regret) + (11 - Waste)) / 4</div>
