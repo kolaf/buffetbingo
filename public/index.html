@@ -13,7 +13,7 @@
     <style>
         body {
             font-family: 'Roboto', sans-serif;
-            background-color: #f8fafc;
+            background-color: #f8fafc; /* Slate-50 */
             scroll-behavior: smooth;
         }
 
@@ -21,23 +21,9 @@
             font-family: 'Fredoka', sans-serif;
         }
 
-        /* Hero/banner now uses an inline <img> so the full image height is always visible */
         .hero-image {
             /* ensure banner sits below the fixed nav (nav height ≈ 4rem) */
-            margin-top: 0;
-        }
-        .hero-image img {
-            width: 100%;
-            height: auto;
-            display: block;
-            max-width: 1400px; /* reasonable maximum width */
-            margin: 0 auto;
-        }
-        .hero-pattern {
-            background: transparent;
-            min-height: auto;
-            display: block;
-            padding: 0;
+            margin-top: 4rem;
         }
 
         .card-hover:hover {
@@ -85,7 +71,7 @@
 <body class="text-gray-800">
 
     <!-- Navigation -->
-    <nav class="bg-white shadow-md w-full z-50">
+    <nav class="fixed top-0 w-full z-50 bg-white/80 backdrop-blur-md border-b border-slate-200/50 transition-all duration-300">
         <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
             <div class="flex justify-between h-16">
                 <div class="flex items-center">
@@ -234,7 +220,7 @@
     </section>
 
     <!-- Achievements Section -->
-    <section id="badges" class="py-20 bg-gray-50">
+    <section id="badges" class="py-24 bg-slate-50">
         <div class="max-w-7xl mx-auto px-4">
             <h2 class="text-4xl font-bold text-center mb-12 uppercase brand-font tracking-widest">Achievement Hall</h2>
             <div class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-6 gap-6">
@@ -305,10 +291,10 @@
     </section>
 
     <!-- Ninja Code Section -->
-    <section id="ethics" class="py-20 bg-white">
+    <section id="ethics" class="py-24 bg-white">
         <div class="max-w-4xl mx-auto px-4">
-            <div class="bg-slate-50 border-l-8 border-rose-600 p-10 rounded-r-2xl shadow-xl">
-                <h2 class="text-3xl font-bold mb-8 flex items-center brand-font">
+            <div class="bg-slate-50 border border-slate-100 p-10 rounded-3xl shadow-xl shadow-slate-200/50">
+                <h2 class="text-3xl font-bold mb-10 flex items-center brand-font text-slate-900">
                     <i class="fas fa-user-ninja text-rose-600 mr-4"></i>
                     The Ninja Code of Ethics
                 </h2>
@@ -354,32 +340,33 @@
     </section>
 
     <!-- Digital Scorecard -->
-    <section id="scorecard" class="py-20 bg-rose-600 text-white">
+    <section id="scorecard" class="py-24 bg-rose-600 text-white relative overflow-hidden">
+        <div class="absolute inset-0 bg-[url('data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMjAiIGhlaWdodD0iMjAiIHhtbG5zPSJodHRwOi8vd3d3LnczLm9yZy8yMDAwL3N2ZyI+PGNpcmNsZSBjeD0iMiIgY3k9IjIiIHI9IjIiIGZpbGw9IiZmZmZmZmYiIGZpbGwtb3BhY2l0eT0iMC4xIi8+PC9zdmc+')] opacity-20"></div>
         <div class="max-w-4xl mx-auto px-4">
             <h2 class="text-4xl font-bold text-center mb-8 uppercase brand-font tracking-widest">Digital Scorecard</h2>
-            <form id="score-form" class="bg-white text-gray-900 p-8 rounded-2xl shadow-xl">
+            <form id="score-form" class="bg-white text-gray-900 p-8 md:p-12 rounded-3xl shadow-2xl relative z-10">
                 <div class="grid md:grid-cols-2 gap-6 mb-4">
                     <div>
-                        <label class="block text-sm font-bold mb-2">Taste Quality (1-10)</label>
-                        <input type="number" id="score-taste" min="1" max="10" class="w-full p-3 border rounded-lg bg-gray-50" required>
+                        <label class="block text-sm font-bold mb-2 text-slate-700">Taste Quality (1-10)</label>
+                        <input type="number" id="score-taste" min="1" max="10" class="w-full p-4 border border-slate-200 rounded-xl bg-slate-50 focus:ring-2 focus:ring-rose-500 focus:border-rose-500 outline-none transition" required>
                     </div>
                     <div>
-                        <label class="block text-sm font-bold mb-2">Plate Cohesion (1-10)</label>
-                        <input type="number" id="score-cohesion" min="1" max="10" class="w-full p-3 border rounded-lg bg-gray-50" required>
+                        <label class="block text-sm font-bold mb-2 text-slate-700">Plate Cohesion (1-10)</label>
+                        <input type="number" id="score-cohesion" min="1" max="10" class="w-full p-4 border border-slate-200 rounded-xl bg-slate-50 focus:ring-2 focus:ring-rose-500 focus:border-rose-500 outline-none transition" required>
                     </div>
                 </div>
                 <div class="grid md:grid-cols-2 gap-6 mb-8">
                     <div>
-                        <label class="block text-sm font-bold mb-2">Regret Level (1-10)</label>
-                        <input type="number" id="score-regret" min="1" max="10" class="w-full p-3 border rounded-lg bg-gray-50" placeholder="1 = No Regrets" required>
+                        <label class="block text-sm font-bold mb-2 text-slate-700">Regret Level (1-10)</label>
+                        <input type="number" id="score-regret" min="1" max="10" class="w-full p-4 border border-slate-200 rounded-xl bg-slate-50 focus:ring-2 focus:ring-rose-500 focus:border-rose-500 outline-none transition" placeholder="1 = No Regrets" required>
                     </div>
                     <div>
                         <label class="block text-sm font-bold mb-2 text-rose-600">Leftovers Penalty (1-10)</label>
-                        <input type="number" id="score-waste" min="1" max="10" class="w-full p-3 border border-rose-200 rounded-lg bg-rose-50" placeholder="1 = Clean Plate" required>
+                        <input type="number" id="score-waste" min="1" max="10" class="w-full p-4 border border-rose-200 rounded-xl bg-rose-50 focus:ring-2 focus:ring-rose-500 focus:border-rose-500 outline-none transition" placeholder="1 = Clean Plate" required>
                         <p class="text-[10px] text-rose-400 mt-1">*Higher waste reduces your rank.</p>
                     </div>
                 </div>
-                <button type="submit" class="w-full bg-slate-900 text-white py-4 rounded-xl font-bold hover:bg-slate-800 transition shadow-lg">Calculate Final Rank</button>
+                <button type="submit" class="w-full bg-slate-900 text-white py-4 rounded-xl font-bold hover:bg-slate-800 transition shadow-lg hover:shadow-xl transform hover:-translate-y-0.5">Calculate Final Rank</button>
                 
                 <div id="result-display" class="hidden mt-8 text-center p-6 bg-gray-50 rounded-xl border-2 border-dashed border-gray-200">
                     <p class="text-sm text-gray-500 uppercase tracking-widest font-bold">Official Shadow Score</p>
