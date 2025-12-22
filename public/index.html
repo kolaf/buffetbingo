@@ -435,6 +435,14 @@
             menuBtn.setAttribute('aria-expanded', isOpen);
         });
         
+        // Close mobile menu when any link inside it is clicked
+        menu.querySelectorAll('a').forEach(link => {
+            link.addEventListener('click', () => {
+                menu.classList.remove('open');
+                menuBtn.setAttribute('aria-expanded', 'false');
+            });
+        });
+
         document.getElementById('score-form').addEventListener('submit', calculateScore);
         document.getElementById('btn-random-challenge').addEventListener('click', generateBingoCard);
 
