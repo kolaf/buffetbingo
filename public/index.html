@@ -80,7 +80,6 @@
             max-height: 600px;
             opacity: 1;
         }
-
     </style>
 </head>
 <body class="text-gray-800">
@@ -91,7 +90,7 @@
             <div class="flex justify-between h-16">
                 <div class="flex items-center">
                     <i class="fas fa-utensils text-rose-600 text-2xl mr-2"></i>
-                    <span class="text-2xl font-bold text-transparent bg-clip-text bg-gradient-to-r from-rose-600 to-orange-500 brand-font">Buffet Bingo</span>
+                    <span class="text-2xl font-bold text-gray-900 brand-font">Buffet Bingo</span>
                 </div>
                 <div class="hidden md:flex items-center space-x-8">
                     <a href="#rules" class="nav-link text-gray-600 hover:text-rose-600 font-medium">Rules</a>
@@ -139,7 +138,7 @@
     </section>
 
     <!-- The Pitch Section -->
-    <section class="pb-20 bg-rose-50 rounded-b-[3rem] shadow-sm relative z-10">
+    <section class="pb-16 bg-rose-50 border-b border-rose-100">
         <div class="max-w-3xl mx-auto px-6 text-center">
             <h2 class="text-3xl font-bold text-rose-900 mb-6 brand-font italic">"Wait... You want me to follow a stranger?"</h2>
             <div class="space-y-4 text-lg text-gray-700 leading-relaxed">
@@ -191,7 +190,7 @@
     </section>
 
     <!-- Scouting Archetypes -->
-    <section id="scouting" class="py-20 bg-slate-900 text-white bg-[radial-gradient(ellipse_at_top,_var(--tw-gradient-stops))] from-slate-800 via-slate-900 to-slate-950">
+    <section id="scouting" class="py-20 bg-slate-900 text-white">
         <div class="max-w-7xl mx-auto px-4">
             <div class="text-center mb-16">
                 <span class="text-rose-400 font-bold tracking-wider uppercase text-sm">Strategy</span>
@@ -200,35 +199,35 @@
             <div class="grid md:grid-cols-3 lg:grid-cols-4 gap-6">
                 <div class="bg-slate-800 p-6 rounded-xl border border-slate-700 hover:border-rose-500 transition">
                     <h3 class="text-lg font-bold text-rose-400 mb-2">The Grandma</h3>
-                    <p class="text-xs text-slate-300">Expert at spotting homemade quality. Safe and delicious choice. Likely has a purse full of hard candies.</p>
+                    <p class="text-xs text-slate-300">Expert at spotting homemade quality. Safe and delicious choice.</p>
                 </div>
                 <div class="bg-slate-800 p-6 rounded-xl border border-slate-700 hover:border-blue-500 transition">
                     <h3 class="text-lg font-bold text-blue-400 mb-2">The Structural Engineer</h3>
-                    <p class="text-xs text-slate-300">Masters of gravity. Expect massive, perfectly balanced towers. Treats mashed potatoes as load-bearing mortar.</p>
+                    <p class="text-xs text-slate-300">Masters of gravity. Expect massive, perfectly balanced towers.</p>
                 </div>
                 <div class="bg-slate-800 p-6 rounded-xl border border-slate-700 hover:border-amber-500 transition">
                     <h3 class="text-lg font-bold text-amber-500 mb-2">The Sauce Scientist</h3>
-                    <p class="text-xs text-slate-300">Mixing 5+ condiments for the perfect dip. High technicality. Will use a ramekin for things that definitely don't need one.</p>
+                    <p class="text-xs text-slate-300">Mixing 5+ condiments for the perfect dip. High technicality.</p>
                 </div>
                 <div class="bg-slate-800 p-6 rounded-xl border border-slate-700 hover:border-emerald-500 transition">
                     <h3 class="text-lg font-bold text-emerald-500 mb-2">The Protein Purist</h3>
-                    <p class="text-xs text-slate-300">Pure steak and seafood. High value, very high sodium. Thinks vegetables are just decoration.</p>
+                    <p class="text-xs text-slate-300">Pure steak and seafood. High value, very high sodium.</p>
                 </div>
                 <div class="bg-slate-800 p-6 rounded-xl border border-slate-700 hover:border-purple-500 transition">
                     <h3 class="text-lg font-bold text-purple-500 mb-2">The Plate-Cleaner</h3>
-                    <p class="text-xs text-slate-300">Small portions, but will walk the line dozens of times. Their step count is higher than their calorie count.</p>
+                    <p class="text-xs text-slate-300">Small portions, but will walk the line dozens of times.</p>
                 </div>
                 <div class="bg-slate-800 p-6 rounded-xl border border-slate-700 hover:border-orange-500 transition">
                     <h3 class="text-lg font-bold text-orange-500 mb-2">The Vacationer</h3>
-                    <p class="text-xs text-slate-300">Absolute chaos. Everything everywhere all at once. Wearing floral print regardless of the season.</p>
+                    <p class="text-xs text-slate-300">Absolute chaos. Everything everywhere all at once.</p>
                 </div>
                 <div class="bg-slate-800 p-6 rounded-xl border border-slate-700 hover:border-sky-500 transition">
                     <h3 class="text-lg font-bold text-sky-500 mb-2">The Scanner</h3>
-                    <p class="text-xs text-slate-300">Walks the entire perimeter before picking up a single plate. Treats the buffet line like a museum exhibit.</p>
+                    <p class="text-xs text-slate-300">Walks the entire perimeter before picking up a single plate.</p>
                 </div>
                 <div class="bg-slate-800 p-6 rounded-xl border border-slate-700 hover:border-red-600 transition">
                     <h3 class="text-lg font-bold text-red-600 mb-2">The Toddler</h3>
-                    <p class="text-xs text-slate-300">Results in a plate of one nugget and a lemon wedge. Will cry if the mac and cheese touches the peas.</p>
+                    <p class="text-xs text-red-400 font-bold uppercase">Avoid at all costs. Danger zone.</p>
                 </div>
             </div>
         </div>
@@ -362,21 +361,21 @@
                 <div class="grid md:grid-cols-2 gap-6 mb-4">
                     <div>
                         <label class="block text-sm font-bold mb-2">Taste Quality (1-10)</label>
-                        <input type="number" id="score-taste" min="1" max="10" class="w-full p-3 border border-gray-200 rounded-lg bg-gray-50 focus:ring-2 focus:ring-rose-500 focus:border-transparent outline-none transition duration-200" required>
+                        <input type="number" id="score-taste" min="1" max="10" class="w-full p-3 border rounded-lg bg-gray-50" required>
                     </div>
                     <div>
                         <label class="block text-sm font-bold mb-2">Plate Cohesion (1-10)</label>
-                        <input type="number" id="score-cohesion" min="1" max="10" class="w-full p-3 border border-gray-200 rounded-lg bg-gray-50 focus:ring-2 focus:ring-rose-500 focus:border-transparent outline-none transition duration-200" required>
+                        <input type="number" id="score-cohesion" min="1" max="10" class="w-full p-3 border rounded-lg bg-gray-50" required>
                     </div>
                 </div>
                 <div class="grid md:grid-cols-2 gap-6 mb-8">
                     <div>
                         <label class="block text-sm font-bold mb-2">Regret Level (1-10)</label>
-                        <input type="number" id="score-regret" min="1" max="10" class="w-full p-3 border border-gray-200 rounded-lg bg-gray-50 focus:ring-2 focus:ring-rose-500 focus:border-transparent outline-none transition duration-200" placeholder="1 = No Regrets" required>
+                        <input type="number" id="score-regret" min="1" max="10" class="w-full p-3 border rounded-lg bg-gray-50" placeholder="1 = No Regrets" required>
                     </div>
                     <div>
                         <label class="block text-sm font-bold mb-2 text-rose-600">Leftovers Penalty (1-10)</label>
-                        <input type="number" id="score-waste" min="1" max="10" class="w-full p-3 border border-rose-200 rounded-lg bg-rose-50 focus:ring-2 focus:ring-rose-500 focus:border-transparent outline-none transition duration-200" placeholder="1 = Clean Plate" required>
+                        <input type="number" id="score-waste" min="1" max="10" class="w-full p-3 border border-rose-200 rounded-lg bg-rose-50" placeholder="1 = Clean Plate" required>
                         <p class="text-[10px] text-rose-400 mt-1">*Higher waste reduces your rank.</p>
                     </div>
                 </div>
@@ -519,73 +518,235 @@
 
         // --- Pre-game printable template (blank) ---
         function createPreGameTemplate() {
-            const rowsCount = 12; // default blank rows
-            const badgeHtml = BADGES.map(b => `<div style="display:inline-block;width:48%;margin-bottom:6px"><i class="${b.icon} text-rose-600" style="margin-right:6px"></i>${b.name}</div>`).join('');
-
-            const header = `
-                <div style="text-align:center;margin-bottom:8px">
-                    <h1 style="font-family:Fredoka, Roboto, sans-serif;color:#e11d48;margin:0;padding:0;font-size:20px;font-weight:700">Buffet Bingo — Pre-game Scorecard</h1>
-                    <p style="color:#374151;margin-top:6px;margin-bottom:0;font-size:13px">Fill in player names & scores during the meal. Use the badges to mark achievements.</p>
-                    <p style="color:#6b7280;margin-top:4px;font-size:11px">Scoring formula (to calculate totals): (Taste + Cohesion + (11 − Regret) + (11 − Waste)) / 4 — round to nearest tenth.</p>
-                </div>`;
+            const rowsCount = 10;
+            
+            const badgeHtml = BADGES.map(b => `
+                <div class="badge-item">
+                    <i class="${b.icon}" style="color:#e11d48; width:20px; text-align:center;"></i>
+                    <span>${b.name}</span>
+                </div>
+            `).join('');
 
             const tableRows = Array.from({length: rowsCount}).map((_,i) => {
-                return `<tr><td style="padding:8px;border:1px solid #ddd">${i+1}.</td><td style="padding:8px;border:1px solid #ddd;width:260px">&nbsp;</td><td style="padding:8px;border:1px solid #ddd;text-align:center;width:70px">&nbsp;</td><td style="padding:8px;border:1px solid #ddd;text-align:center;width:70px">&nbsp;</td><td style="padding:8px;border:1px solid #ddd;text-align:center;width:70px">&nbsp;</td><td style="padding:8px;border:1px solid #ddd;text-align:center;width:70px">&nbsp;</td><td style="padding:8px;border:1px solid #ddd;text-align:center;width:70px">&nbsp;</td></tr>`;
+                return `
+                <tr>
+                    <td style="text-align:center; color:#94a3b8; font-weight:bold;">${i+1}</td>
+                    <td></td>
+                    <td></td>
+                    <td></td>
+                    <td></td>
+                    <td></td>
+                    <td style="background-color:#fff1f2;"></td>
+                </tr>`;
             }).join('');
 
             const html = `
+                <!DOCTYPE html>
                 <html>
                 <head>
-                    <title>Buffet Bingo — Blank Scorecard</title>
+                    <title>Buffet Bingo Scorecard</title>
                     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+                    <link href="https://fonts.googleapis.com/css2?family=Fredoka:wght@600&family=Roboto:wght@400;500;700&display=swap" rel="stylesheet">
                     <style>
-                        @page { size: A4; margin: 12mm; }
-                        html,body{height:100%}
-                        body{font-family:Roboto,Arial,Helvetica,sans-serif;color:#111;margin:6mm; font-size:12px; -webkit-print-color-adjust:exact}
-                        table{border-collapse:collapse;width:100%;margin-top:6px;border-spacing:0;font-size:12px}
-                        th{background:#fde68a;padding:6px;border:1px solid #ddd;text-align:left;font-weight:700}
-                        td{padding:6px;border:1px solid #ddd}
-                        .small{font-size:11px;color:#6b7280}
-                        .badge-legend div{width:48%;display:inline-block;box-sizing:border-box;font-size:11px;margin-bottom:4px;vertical-align:middle}
+                        @page { size: A4; margin: 0; }
+                        body {
+                            font-family: 'Roboto', sans-serif;
+                            margin: 0;
+                            padding: 40px;
+                            color: #1e293b;
+                            -webkit-print-color-adjust: exact;
+                            print-color-adjust: exact;
+                        }
+                        .container {
+                            max-width: 800px;
+                            margin: 0 auto;
+                            border: 2px solid #e2e8f0;
+                            border-radius: 16px;
+                            padding: 32px;
+                            height: 90vh;
+                            box-sizing: border-box;
+                            position: relative;
+                        }
+                        .header {
+                            text-align: center;
+                            margin-bottom: 30px;
+                            border-bottom: 2px solid #f1f5f9;
+                            padding-bottom: 20px;
+                        }
+                        .brand {
+                            font-family: 'Fredoka', sans-serif;
+                            font-size: 32px;
+                            color: #0f172a;
+                            margin-bottom: 4px;
+                            display: flex;
+                            align-items: center;
+                            justify-content: center;
+                        }
+                        .subtitle {
+                            font-size: 14px;
+                            text-transform: uppercase;
+                            letter-spacing: 2px;
+                            color: #64748b;
+                            font-weight: 700;
+                            margin-bottom: 20px;
+                        }
+                        .meta {
+                            display: flex;
+                            justify-content: center;
+                            gap: 40px;
+                            font-size: 14px;
+                        }
+                        
+                        table {
+                            width: 100%;
+                            border-collapse: collapse;
+                            margin-bottom: 30px;
+                        }
+                        th {
+                            background-color: #e11d48;
+                            color: white;
+                            padding: 12px 8px;
+                            font-size: 12px;
+                            text-transform: uppercase;
+                            letter-spacing: 1px;
+                            font-weight: 600;
+                            text-align: center;
+                        }
+                        th:first-child { border-top-left-radius: 8px; }
+                        th:last-child { border-top-right-radius: 8px; }
+                        
+                        td {
+                            border-bottom: 1px solid #e2e8f0;
+                            padding: 12px 8px;
+                            font-size: 14px;
+                        }
+                        tr:last-child td { border-bottom: none; }
+                        tr:nth-child(even) { background-color: #f8fafc; }
+                        
+                        /* Column widths */
+                        th:nth-child(1) { width: 40px; } /* # */
+                        th:nth-child(2) { text-align: left; padding-left: 16px; } /* Name */
+                        td:nth-child(2) { padding-left: 16px; }
+                        
+                        .formula-box {
+                            background-color: #f1f5f9;
+                            padding: 16px;
+                            border-radius: 8px;
+                            font-size: 12px;
+                            color: #475569;
+                            text-align: center;
+                            margin-bottom: 30px;
+                            border: 1px dashed #cbd5e1;
+                        }
+                        
+                        .legend-grid {
+                            display: grid;
+                            grid-template-columns: repeat(4, 1fr);
+                            gap: 8px;
+                            margin-top: 12px;
+                            padding-top: 12px;
+                            border-top: 1px solid #cbd5e1;
+                        }
+                        .legend-item {
+                            text-align: center;
+                            font-size: 11px;
+                            line-height: 1.4;
+                        }
+                        .legend-item strong {
+                            display: block;
+                            color: #0f172a;
+                            font-weight: 700;
+                        }
+                        
+                        .badges-section {
+                            margin-top: auto;
+                        }
+                        .badges-title {
+                            font-family: 'Fredoka', sans-serif;
+                            font-size: 18px;
+                            margin-bottom: 12px;
+                            color: #334155;
+                            border-bottom: 1px solid #e2e8f0;
+                            padding-bottom: 8px;
+                        }
+                        .badge-grid {
+                            display: grid;
+                            grid-template-columns: repeat(4, 1fr);
+                            gap: 12px;
+                        }
+                        .badge-item {
+                            display: flex;
+                            align-items: center;
+                            font-size: 11px;
+                            color: #475569;
+                        }
+                        
                         @media print{
-                            .page-break{page-break-after:always}
-                            body{margin:0}
-                            .no-print{display:none}
-                            table{page-break-inside:auto}
-                            tr{page-break-inside:avoid;page-break-after:auto}
+                            body { padding: 0; margin: 0; }
+                            .container { border: none; height: 100%; border-radius: 0; padding: 20mm; }
                         }
                     </style>
                 </head>
                 <body>
-                    ${header}
-                    <div style="display:flex;gap:12px;align-items:center;margin-bottom:8px">
-                        <div style="flex:1"><strong class="small">Group / Date:</strong> ____________________________</div>
-                        <div style="flex:0 0 140px;text-align:right"><strong class="small">Round:</strong> _____</div>
-                    </div>
-                    <table>
-                        <thead>
-                            <tr>
-                                <th style="width:30px">#</th>
-                                <th>Player name (write)</th>
-                                <th style="text-align:center">Taste</th>
-                                <th style="text-align:center">Cohesion</th>
-                                <th style="text-align:center">Regret</th>
-                                <th style="text-align:center">Waste</th>
-                                <th style="text-align:center">Total</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            ${tableRows}
-                        </tbody>
-                    </table>
+                    <div class="container">
+                        <div class="header">
+                            <div class="brand">
+                                <i class="fas fa-utensils" style="color:#e11d48; margin-right:10px;"></i>
+                                Buffet Bingo
+                            </div>
+                            <div class="subtitle">Official Scorecard</div>
+                            <div class="meta">
+                                <div><strong>Date:</strong> ________________</div>
+                                <div><strong>Location:</strong> ___________________________________</div>
+                            </div>
+                        </div>
+                        
+                        <table>
+                            <thead>
+                                <tr>
+                                    <th>#</th>
+                                    <th>Player Name</th>
+                                    <th>Taste</th>
+                                    <th>Cohesion</th>
+                                    <th>Regret</th>
+                                    <th>Waste</th>
+                                    <th>Total</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                ${tableRows}
+                            </tbody>
+                        </table>
 
-                    <div style="margin-top:14px">
-                        <h3 style="margin:6px 0">Badge Legend</h3>
-                        <div class="badge-legend" style="display:flex;flex-wrap:wrap;gap:8px">${badgeHtml}</div>
-                        <p class="small" style="margin-top:10px">Tip: Use the badge symbols to mark achievements on your paper card. A line is provided to write names and numeric scores, totals can be calculated using the formula above.</p>
-                    </div>
+                        <div class="formula-box">
+                            <div style="margin-bottom:12px"><strong>Scoring Formula:</strong> (Taste + Cohesion + (11 - Regret) + (11 - Waste)) / 4</div>
+                            <div class="legend-grid">
+                                <div class="legend-item">
+                                    <strong>Taste</strong>
+                                    10 = Delicious<br>1 = Inedible
+                                </div>
+                                <div class="legend-item">
+                                    <strong>Cohesion</strong>
+                                    10 = Perfect Theme<br>1 = Chaos
+                                </div>
+                                <div class="legend-item">
+                                    <strong>Regret</strong>
+                                    1 = No Regrets (Best)<br>10 = Deep Shame
+                                </div>
+                                <div class="legend-item">
+                                    <strong>Waste</strong>
+                                    1 = Clean Plate (Best)<br>10 = Full Plate
+                                </div>
+                            </div>
+                        </div>
 
-                    <div class="page-break"></div>
+                        <div class="badges-section">
+                            <div class="badges-title">Achievement Badges</div>
+                            <div class="badge-grid">
+                                ${badgeHtml}
+                            </div>
+                        </div>
+                    </div>
                 </body>
                 </html>`;
 
@@ -593,7 +754,7 @@
             w.document.write(html);
             w.document.close();
             w.focus();
-            setTimeout(() => w.print(), 300);
+            setTimeout(() => w.print(), 500);
         }
 
         // wire the new nav links
