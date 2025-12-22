@@ -1,0 +1,578 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Buffet Bingo - Let Dinner Choose You</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Fredoka:wght@400;600&family=Roboto:wght@300;400;700&display=swap');
+
+        body {
+            font-family: 'Roboto', sans-serif;
+            background-color: #f8fafc;
+            scroll-behavior: smooth;
+        }
+
+        h1, h2, h3, .brand-font {
+            font-family: 'Fredoka', sans-serif;
+        }
+
+        .hero-pattern {
+            background-color: #e11d48;
+            background-image: url("data:image/svg+xml,%3Csvg width='60' height='60' viewBox='0 0 60 60' xmlns='http://www.w3.org/2000/svg'%3E%3Cg fill='none' fill-rule='evenodd'%3E%3Cg fill='%239f1239' fill-opacity='0.2'%3E%3Cpath d='M36 34v-4h-2v4h-4v2h4v4h2v-4h4v-2h-4zm0-30V0h-2v4h-4v2h4v4h2V6h4V4h-4zM6 34v-4H4v4H0v2h4v4h2v-4h4v-2H6zM6 4V0H4v4H0v2h4v4h2V6h4V4H6z'/%3E%3C/g%3E%3C/g%3E%3C/svg%3E");
+        }
+
+        .card-hover:hover {
+            transform: translateY(-5px);
+            transition: transform 0.3s ease;
+        }
+
+        .badge-icon {
+            background: linear-gradient(135deg, #fbbf24 0%, #d97706 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+        
+        .nav-link {
+            position: relative;
+        }
+        
+        .nav-link::after {
+            content: '';
+            position: absolute;
+            width: 0;
+            height: 2px;
+            bottom: -2px;
+            left: 0;
+            background-color: #e11d48;
+            transition: width 0.3s ease;
+        }
+        
+        .nav-link:hover::after {
+            width: 100%;
+        }
+
+        #mobile-menu {
+            transition: max-height 0.3s ease-in-out, opacity 0.3s ease-in-out;
+            max-height: 0;
+            opacity: 0;
+            overflow: hidden;
+        }
+        #mobile-menu.open {
+            max-height: 600px;
+            opacity: 1;
+        }
+    </style>
+</head>
+<body class="text-gray-800">
+
+    <!-- Navigation -->
+    <nav class="bg-white shadow-md fixed w-full z-50">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="flex justify-between h-16">
+                <div class="flex items-center">
+                    <i class="fas fa-utensils text-rose-600 text-2xl mr-2"></i>
+                    <span class="text-2xl font-bold text-gray-900 brand-font">Buffet Bingo</span>
+                </div>
+                <div class="hidden md:flex items-center space-x-8">
+                    <a href="#rules" class="nav-link text-gray-600 hover:text-rose-600 font-medium">Rules</a>
+                    <a href="#scouting" class="nav-link text-gray-600 hover:text-rose-600 font-medium">Scouting</a>
+                    <a href="#badges" class="nav-link text-gray-600 hover:text-rose-600 font-medium">Badges</a>
+                    <a href="#ethics" class="nav-link text-gray-600 hover:text-rose-600 font-medium">Ninja Code</a>
+                    <a href="#" id="download-pre-game-template" class="nav-link text-gray-600 hover:text-rose-600 font-medium">Download Scorecard</a>
+                    <a href="#scorecard" class="bg-rose-600 text-white px-4 py-2 rounded-full hover:bg-rose-700 transition shadow-lg">Play Now</a>
+                </div>
+                <div class="md:hidden flex items-center">
+                    <button id="mobile-menu-btn" class="text-gray-600 hover:text-rose-600 focus:outline-none">
+                        <i class="fas fa-bars text-2xl"></i>
+                    </button>
+                </div>
+            </div>
+        </div>
+        <div id="mobile-menu" class="md:hidden bg-white shadow-lg border-t">
+            <a href="#rules" class="block py-2 px-4 text-sm hover:bg-gray-100">Rules</a>
+            <a href="#scouting" class="block py-2 px-4 text-sm hover:bg-gray-100">Scouting</a>
+            <a href="#badges" class="block py-2 px-4 text-sm hover:bg-gray-100">Badges</a>
+            <a href="#ethics" class="block py-2 px-4 text-sm hover:bg-gray-100">Ninja Code</a>
+            <a href="#" id="download-pre-game-template-mobile" class="block py-2 px-4 text-sm hover:bg-gray-100">Download Scorecard</a>
+            <a href="#scorecard" class="block py-2 px-4 text-sm text-rose-600 font-bold hover:bg-gray-100">Play Now</a>
+        </div>
+    </nav>
+
+    <!-- Hero Section -->
+    <section class="hero-pattern pt-32 pb-20 px-4 text-center text-white">
+        <div class="max-w-4xl mx-auto">
+            <h1 class="text-5xl md:text-7xl font-bold mb-6 tracking-tight drop-shadow-md">
+                Don't choose your dinner.<br>Let dinner choose you.
+            </h1>
+            <p class="text-xl md:text-2xl mb-10 text-rose-100 max-w-2xl mx-auto">
+                Join the global movement of culinary shadowing and discovery.
+            </p>
+            <div class="flex flex-col sm:flex-row justify-center gap-4">
+                <a href="#rules" class="bg-white text-rose-600 px-8 py-3 rounded-full font-bold text-lg hover:bg-gray-100 transition shadow-lg">Read the Rules</a>
+                <button onclick="generateBingoCard()" class="border-2 border-white text-white px-8 py-3 rounded-full font-bold text-lg hover:bg-white hover:text-rose-600 transition shadow-lg">
+                    <i class="fas fa-dice mr-2"></i> Random Challenge
+                </button>
+            </div>
+        </div>
+    </section>
+
+    <!-- The Pitch Section -->
+    <section class="py-16 bg-rose-50 border-b border-rose-100">
+        <div class="max-w-3xl mx-auto px-6 text-center">
+            <h2 class="text-3xl font-bold text-rose-900 mb-6 brand-font italic">"Wait... You want me to follow a stranger?"</h2>
+            <div class="space-y-4 text-lg text-gray-700 leading-relaxed">
+                <p>
+                    Let’s face it: left to your own devices, you’re a boring eater. You walk into a buffet and immediately go for the "safe" dinner roll and the lukewarm pasta you've had a thousand times. <b>Buffet Bingo</b> is the ultimate cure for choice paralysis. By outsourcing your culinary destiny to a total stranger, you turn a Tuesday night dinner into a high-stakes safari of flavor.
+                </p>
+                <p>
+                    Will your "Guide" lead you to a hidden 10/10 homemade peach cobbler, or will you end up staring down a precarious pile of shrimp cocktail balanced on a slice of pepperoni pizza? Only the tongs of fate can decide. Grab your friends, pin on your secret badge, and prepare for the most fun you can have with communal serving spoons. <b>It’s time to eat a meal that literally isn't your own.</b>
+                </p>
+            </div>
+            <div class="mt-8 flex justify-center">
+                <div class="h-1 w-24 bg-rose-600 rounded-full"></div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Rules Grid -->
+    <section id="rules" class="py-20 bg-white">
+        <div class="max-w-7xl mx-auto px-4">
+            <div class="text-center mb-16">
+                <span class="text-rose-600 font-bold tracking-wider uppercase text-sm">How to Play</span>
+                <h2 class="text-4xl font-bold text-gray-900 mt-2">The Official Rule Book</h2>
+            </div>
+            <div class="grid md:grid-cols-4 gap-8">
+                <div class="bg-gray-50 p-8 rounded-2xl border border-gray-100 text-center card-hover">
+                    <div class="w-12 h-12 bg-rose-100 rounded-full flex items-center justify-center mx-auto mb-4 text-rose-600"><i class="fas fa-crosshairs"></i></div>
+                    <h3 class="font-bold mb-2">1. Target Lock</h3>
+                    <p class="text-sm text-gray-600">Pick a Guide (stranger) before they plate their first item.</p>
+                </div>
+                <div class="bg-gray-50 p-8 rounded-2xl border border-gray-100 text-center card-hover">
+                    <div class="w-12 h-12 bg-rose-100 rounded-full flex items-center justify-center mx-auto mb-4 text-rose-600"><i class="fas fa-user-secret"></i></div>
+                    <h3 class="font-bold mb-2">2. The Shadow</h3>
+                    <p class="text-sm text-gray-600">Copy their plate exactly. Same items, same portions.</p>
+                </div>
+                <div class="bg-gray-50 p-8 rounded-2xl border border-gray-100 text-center card-hover">
+                    <div class="w-12 h-12 bg-rose-100 rounded-full flex items-center justify-center mx-auto mb-4 text-rose-600"><i class="fas fa-utensils"></i></div>
+                    <h3 class="font-bold mb-2">3. The Feast</h3>
+                    <p class="text-sm text-gray-600">The 3-Bite Rule: You must eat 3 bites of everything.</p>
+                </div>
+                <div class="bg-gray-50 p-8 rounded-2xl border border-gray-100 text-center card-hover">
+                    <div class="w-12 h-12 bg-rose-100 rounded-full flex items-center justify-center mx-auto mb-4 text-rose-600"><i class="fas fa-check-circle"></i></div>
+                    <h3 class="font-bold mb-2">4. The Score</h3>
+                    <p class="text-sm text-gray-600">Rate your experience. Highest score wins the round.</p>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Scouting Archetypes -->
+    <section id="scouting" class="py-20 bg-slate-900 text-white">
+        <div class="max-w-7xl mx-auto px-4">
+            <div class="text-center mb-16">
+                <span class="text-rose-400 font-bold tracking-wider uppercase text-sm">Strategy</span>
+                <h2 class="text-4xl font-bold mt-2">Guide Archetypes</h2>
+            </div>
+            <div class="grid md:grid-cols-3 lg:grid-cols-4 gap-6">
+                <div class="bg-slate-800 p-6 rounded-xl border border-slate-700 hover:border-rose-500 transition">
+                    <h3 class="text-lg font-bold text-rose-400 mb-2">The Grandma</h3>
+                    <p class="text-xs text-slate-300">Expert at spotting homemade quality. Safe and delicious choice.</p>
+                </div>
+                <div class="bg-slate-800 p-6 rounded-xl border border-slate-700 hover:border-blue-500 transition">
+                    <h3 class="text-lg font-bold text-blue-400 mb-2">The Structural Engineer</h3>
+                    <p class="text-xs text-slate-300">Masters of gravity. Expect massive, perfectly balanced towers.</p>
+                </div>
+                <div class="bg-slate-800 p-6 rounded-xl border border-slate-700 hover:border-amber-500 transition">
+                    <h3 class="text-lg font-bold text-amber-500 mb-2">The Sauce Scientist</h3>
+                    <p class="text-xs text-slate-300">Mixing 5+ condiments for the perfect dip. High technicality.</p>
+                </div>
+                <div class="bg-slate-800 p-6 rounded-xl border border-slate-700 hover:border-emerald-500 transition">
+                    <h3 class="text-lg font-bold text-emerald-500 mb-2">The Protein Purist</h3>
+                    <p class="text-xs text-slate-300">Pure steak and seafood. High value, very high sodium.</p>
+                </div>
+                <div class="bg-slate-800 p-6 rounded-xl border border-slate-700 hover:border-purple-500 transition">
+                    <h3 class="text-lg font-bold text-purple-500 mb-2">The Plate-Cleaner</h3>
+                    <p class="text-xs text-slate-300">Small portions, but will walk the line dozens of times.</p>
+                </div>
+                <div class="bg-slate-800 p-6 rounded-xl border border-slate-700 hover:border-orange-500 transition">
+                    <h3 class="text-lg font-bold text-orange-500 mb-2">The Vacationer</h3>
+                    <p class="text-xs text-slate-300">Absolute chaos. Everything everywhere all at once.</p>
+                </div>
+                <div class="bg-slate-800 p-6 rounded-xl border border-slate-700 hover:border-sky-500 transition">
+                    <h3 class="text-lg font-bold text-sky-500 mb-2">The Scanner</h3>
+                    <p class="text-xs text-slate-300">Walks the entire perimeter before picking up a single plate.</p>
+                </div>
+                <div class="bg-slate-800 p-6 rounded-xl border border-slate-700 hover:border-red-600 transition">
+                    <h3 class="text-lg font-bold text-red-600 mb-2">The Toddler</h3>
+                    <p class="text-xs text-red-400 font-bold uppercase">Avoid at all costs. Danger zone.</p>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Achievements Section -->
+    <section id="badges" class="py-20 bg-gray-50">
+        <div class="max-w-7xl mx-auto px-4">
+            <h2 class="text-4xl font-bold text-center mb-12 uppercase brand-font tracking-widest">Achievement Hall</h2>
+            <div class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-6 gap-6">
+                <!-- Row 1 -->
+                <div class="bg-white p-4 rounded-xl shadow-sm text-center border border-gray-100 card-hover">
+                    <i class="fas fa-ghost text-2xl mb-2 text-slate-400"></i>
+                    <h4 class="font-bold text-sm">Ghost Protocol</h4>
+                    <p class="text-[10px] text-gray-500">Never spotted by your Guide.</p>
+                </div>
+                <div class="bg-white p-4 rounded-xl shadow-sm text-center border border-gray-100 card-hover">
+                    <i class="fas fa-sync text-2xl mb-2 text-blue-500"></i>
+                    <h4 class="font-bold text-sm">Guide-ception</h4>
+                    <p class="text-[10px] text-gray-500">Guide followed a stranger too.</p>
+                </div>
+                <div class="bg-white p-4 rounded-xl shadow-sm text-center border border-gray-100 card-hover">
+                    <i class="fas fa-flask text-2xl mb-2 text-emerald-500"></i>
+                    <h4 class="font-bold text-sm">Sauce Alchemist</h4>
+                    <p class="text-[10px] text-gray-500">Recreated a complex sauce.</p>
+                </div>
+                <div class="bg-white p-4 rounded-xl shadow-sm text-center border border-gray-100 card-hover">
+                    <i class="fas fa-pepper-hot text-2xl mb-2 text-red-500"></i>
+                    <h4 class="font-bold text-sm">Spicy Sneeze</h4>
+                    <p class="text-[10px] text-gray-500">Mirrored a high-heat plate.</p>
+                </div>
+                <div class="bg-white p-4 rounded-xl shadow-sm text-center border border-gray-100 card-hover">
+                    <i class="fas fa-users text-2xl mb-2 text-indigo-500"></i>
+                    <h4 class="font-bold text-sm">Double Mirror</h4>
+                    <p class="text-[10px] text-gray-500">Two players picked the same Guide.</p>
+                </div>
+                <div class="bg-white p-4 rounded-xl shadow-sm text-center border border-gray-100 card-hover">
+                    <i class="fas fa-crown text-2xl mb-2 text-amber-500"></i>
+                    <h4 class="font-bold text-sm">Grandma Whisperer</h4>
+                    <p class="text-[10px] text-gray-500">Found the secret homemade gem.</p>
+                </div>
+                <!-- Row 2 -->
+                <div class="bg-white p-4 rounded-xl shadow-sm text-center border border-gray-100 card-hover">
+                    <i class="fas fa-monument text-2xl mb-2 text-sky-600"></i>
+                    <h4 class="font-bold text-sm">Tower of Babel</h4>
+                    <p class="text-[10px] text-gray-500">Mirrored a 4" tall vertical stack.</p>
+                </div>
+                <div class="bg-white p-4 rounded-xl shadow-sm text-center border border-gray-100 card-hover">
+                    <i class="fas fa-ice-cream text-2xl mb-2 text-pink-400"></i>
+                    <h4 class="font-bold text-sm">Dessert First</h4>
+                    <p class="text-[10px] text-gray-500">Followed the guide to cake town.</p>
+                </div>
+                <div class="bg-white p-4 rounded-xl shadow-sm text-center border border-gray-100 card-hover border-red-200">
+                    <i class="fas fa-exclamation-triangle text-2xl mb-2 text-red-600"></i>
+                    <h4 class="font-bold text-sm">The Toddler Trap</h4>
+                    <p class="text-[10px] text-gray-500">Followed a child. Deep regret.</p>
+                </div>
+                <div class="bg-white p-4 rounded-xl shadow-sm text-center border border-gray-100 card-hover">
+                    <i class="fas fa-broom text-2xl mb-2 text-orange-400"></i>
+                    <h4 class="font-bold text-sm">Clean Sweep</h4>
+                    <p class="text-[10px] text-gray-500">Finished a 10/10 plate entirely.</p>
+                </div>
+                <div class="bg-white p-4 rounded-xl shadow-sm text-center border border-gray-100 card-hover">
+                    <i class="fas fa-biohazard text-2xl mb-2 text-purple-600"></i>
+                    <h4 class="font-bold text-sm">Iron Stomach</h4>
+                    <p class="text-[10px] text-gray-500">Survived a chaotic Vacationer plate.</p>
+                </div>
+                <div class="bg-white p-4 rounded-xl shadow-sm text-center border border-gray-100 card-hover bg-emerald-50">
+                    <i class="fas fa-recycle text-2xl mb-2 text-emerald-600"></i>
+                    <h4 class="font-bold text-sm">Finishing Move</h4>
+                    <p class="text-[10px] text-gray-500">Left an absolutely spotless plate.</p>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Ninja Code Section -->
+    <section id="ethics" class="py-20 bg-white">
+        <div class="max-w-4xl mx-auto px-4">
+            <div class="bg-slate-50 border-l-8 border-rose-600 p-10 rounded-r-2xl shadow-xl">
+                <h2 class="text-3xl font-bold mb-8 flex items-center brand-font">
+                    <i class="fas fa-user-ninja text-rose-600 mr-4"></i>
+                    The Ninja Code of Ethics
+                </h2>
+                <ul class="space-y-6">
+                    <li class="flex items-start">
+                        <div class="bg-rose-100 text-rose-600 p-2 rounded-lg mr-4 mt-1"><i class="fas fa-ruler-horizontal"></i></div>
+                        <div>
+                            <strong class="text-lg">The 1.5-Meter Rule</strong>
+                            <p class="text-gray-600">Never crowd your Guide. If you can smell their perfume or hear them humming, you are too close. Maintain the "Creep Buffer."</p>
+                        </div>
+                    </li>
+                    <li class="flex items-start">
+                        <div class="bg-rose-100 text-rose-600 p-2 rounded-lg mr-4 mt-1"><i class="fas fa-eye-slash"></i></div>
+                        <div>
+                            <strong class="text-lg">No Eye Contact</strong>
+                            <p class="text-gray-600">If they turn around, you must immediately pivot toward the nearest sneeze guard and act like you are agonizing over choice.</p>
+                        </div>
+                    </li>
+                    <li class="flex items-start">
+                        <div class="bg-rose-100 text-rose-600 p-2 rounded-lg mr-4 mt-1"><i class="fas fa-hand-holding-heart"></i></div>
+                        <div>
+                            <strong class="text-lg">The "No Sabotage" Clause</strong>
+                            <p class="text-gray-600">You may not nudge or distract your Guide to influence their choices. You are a shadow, not a villain.</p>
+                        </div>
+                    </li>
+                    <li class="flex items-start">
+                        <div class="bg-rose-100 text-rose-600 p-2 rounded-lg mr-4 mt-1"><i class="fas fa-shield-alt"></i></div>
+                        <div>
+                            <strong class="text-lg">Respect the Staff</strong>
+                            <p class="text-gray-600">Do not block paths. If a server asks if they can help, say "I'm just taking it all in."</p>
+                        </div>
+                    </li>
+                    <li class="flex items-start">
+                        <div class="bg-emerald-100 text-emerald-600 p-2 rounded-lg mr-4 mt-1"><i class="fas fa-leaf"></i></div>
+                        <div>
+                            <strong class="text-lg text-emerald-700">The Zero Waste Protocol</strong>
+                            <p class="text-gray-600">A true Ninja leaves no trace. Do not take massive portions only to throw them away. Every gram of food left behind penalizes your final score.</p>
+                        </div>
+                    </li>
+                </ul>
+            </div>
+        </div>
+    </section>
+
+    <!-- Digital Scorecard -->
+    <section id="scorecard" class="py-20 bg-rose-600 text-white">
+        <div class="max-w-4xl mx-auto px-4">
+            <h2 class="text-4xl font-bold text-center mb-8 uppercase brand-font tracking-widest">Digital Scorecard</h2>
+            <form onsubmit="calculateScore(event)" class="bg-white text-gray-900 p-8 rounded-2xl shadow-xl">
+                <div class="grid md:grid-cols-2 gap-6 mb-4">
+                    <div>
+                        <label class="block text-sm font-bold mb-2">Taste Quality (1-10)</label>
+                        <input type="number" id="score-taste" min="1" max="10" class="w-full p-3 border rounded-lg bg-gray-50" required>
+                    </div>
+                    <div>
+                        <label class="block text-sm font-bold mb-2">Plate Cohesion (1-10)</label>
+                        <input type="number" id="score-cohesion" min="1" max="10" class="w-full p-3 border rounded-lg bg-gray-50" required>
+                    </div>
+                </div>
+                <div class="grid md:grid-cols-2 gap-6 mb-8">
+                    <div>
+                        <label class="block text-sm font-bold mb-2">Regret Level (1-10)</label>
+                        <input type="number" id="score-regret" min="1" max="10" class="w-full p-3 border rounded-lg bg-gray-50" placeholder="1 = No Regrets" required>
+                    </div>
+                    <div>
+                        <label class="block text-sm font-bold mb-2 text-rose-600">Leftovers Penalty (1-10)</label>
+                        <input type="number" id="score-waste" min="1" max="10" class="w-full p-3 border border-rose-200 rounded-lg bg-rose-50" placeholder="1 = Clean Plate" required>
+                        <p class="text-[10px] text-rose-400 mt-1">*Higher waste reduces your rank.</p>
+                    </div>
+                </div>
+                <button type="submit" class="w-full bg-slate-900 text-white py-4 rounded-xl font-bold hover:bg-slate-800 transition shadow-lg">Calculate Final Rank</button>
+                
+                <div id="result-display" class="hidden mt-8 text-center p-6 bg-gray-50 rounded-xl border-2 border-dashed border-gray-200">
+                    <p class="text-sm text-gray-500 uppercase tracking-widest font-bold">Official Shadow Score</p>
+                    <div id="final-score" class="text-5xl font-bold text-rose-600 my-2">0.0</div>
+                    <p id="score-comment" class="text-gray-700 font-medium italic"></p>
+                </div>
+            </form>
+        </div>
+    </section>
+
+    <!-- Scoring Algorithm Explanation -->
+    <section class="py-20 bg-gray-50">
+        <div class="max-w-4xl mx-auto px-4">
+            <h2 class="text-3xl font-bold text-center mb-10 brand-font">The Science of the Score</h2>
+            <div class="grid md:grid-cols-2 gap-8">
+                <div class="flex items-start">
+                    <div class="text-rose-600 mr-4"><i class="fas fa-flask text-2xl"></i></div>
+                    <div>
+                        <h3 class="font-bold mb-1">Standard 10-Point Average</h3>
+                        <p class="text-sm text-gray-600">Your final Shadow Score is a simple average of four metrics. Each category contributes exactly 25% to the final result.</p>
+                    </div>
+                </div>
+                <div class="flex items-start">
+                    <div class="text-rose-600 mr-4"><i class="fas fa-calculator text-2xl"></i></div>
+                    <div>
+                        <h3 class="font-bold mb-1">The Inverse Balance</h3>
+                        <p class="text-sm text-gray-600">Metrics like <strong>Regret</strong> and <strong>Waste</strong> are inversed (11 minus your input). This ensures that a "1" in waste correctly results in a high score.</p>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="mt-12 bg-white p-8 rounded-2xl shadow-sm border border-gray-100">
+                <h3 class="text-lg font-bold mb-4 text-center">The Equation</h3>
+                <div class="flex flex-wrap justify-center items-center gap-4 text-sm md:text-base font-mono bg-gray-50 p-6 rounded-xl border border-gray-200 text-center">
+                    <span class="bg-blue-100 px-2 py-1 rounded">Taste</span>
+                    <span>+</span>
+                    <span class="bg-purple-100 px-2 py-1 rounded">Cohesion</span>
+                    <span>+</span>
+                    <span class="bg-green-100 px-2 py-1 rounded">(11 - Regret)</span>
+                    <span>+</span>
+                    <span class="bg-rose-100 px-2 py-1 rounded">(11 - Waste)</span>
+                    <div class="w-full flex justify-center border-t border-gray-300 pt-2">
+                        <span>/ 4</span>
+                    </div>
+                </div>
+                <p class="text-xs text-center text-gray-400 mt-4 italic">The result is rounded to the nearest tenth.</p>
+            </div>
+        </div>
+    </section>
+
+    <footer class="bg-slate-900 text-slate-500 py-12 text-center text-sm">
+        <div class="max-w-7xl mx-auto px-4">
+            <i class="fas fa-utensils text-2xl text-rose-600 mb-4"></i>
+            <p class="text-white font-bold mb-2">Buffet Bingo Global</p>
+            <p>Eat like a shadow. Move like the wind.</p>
+        </div>
+    </footer>
+
+    <script>
+        document.getElementById('mobile-menu-btn').addEventListener('click', () => {
+            document.getElementById('mobile-menu').classList.toggle('open');
+        });
+
+        function calculateScore(e) {
+            e.preventDefault();
+            const taste = parseFloat(document.getElementById('score-taste').value);
+            const cohesion = parseFloat(document.getElementById('score-cohesion').value);
+            const regret = parseFloat(document.getElementById('score-regret').value);
+            const waste = parseFloat(document.getElementById('score-waste').value);
+
+            // Reverted Formula: (Taste + Cohesion + (11 - Regret) + (11 - Waste)) / 4
+            const inverseRegret = 11 - regret;
+            const inverseWaste = 11 - waste;
+            
+            let total = (taste + cohesion + inverseRegret + inverseWaste) / 4;
+            total = Math.round(total * 10) / 10;
+
+            const display = document.getElementById('result-display');
+            const scoreVal = document.getElementById('final-score');
+            const comment = document.getElementById('score-comment');
+
+            display.classList.remove('hidden');
+            scoreVal.innerText = total + "/10";
+
+            if (total >= 9) comment.innerText = "🏆 Grandmaster of the Galley!";
+            else if (total >= 7.5) comment.innerText = "👏 A Master of Shadows.";
+            else if (total >= 5) comment.innerText = "😐 Acceptable Fate. But finish your greens.";
+            else comment.innerText = "🤢 Disgraceful. The Buffet Gods are displeased.";
+        }
+
+        function generateBingoCard() {
+            const missions = [
+                "Find a Structural Engineer and mirror their base layer.",
+                "Follow a Sauce Scientist for 3 minutes without eye contact.",
+                "Complete a Dessert First round with Ghost Protocol.",
+                "Mirror a Grandma but skip the jello (Allergy Veto).",
+                "Find a Protein Purist and take only their seafood.",
+                "The Zero Waste Mission: Earn 'Finishing Move' this round."
+            ];
+            const mission = missions[Math.floor(Math.random() * missions.length)];
+            const modal = document.createElement('div');
+            modal.className = 'fixed inset-0 bg-black/80 flex items-center justify-center z-[100] p-4';
+            modal.innerHTML = `
+                <div class="bg-white p-8 rounded-2xl text-center max-w-sm">
+                    <i class="fas fa-dice text-4xl text-rose-600 mb-4"></i>
+                    <h3 class="text-xl font-bold mb-4">New Mission</h3>
+                    <p class="text-gray-600 italic mb-6">"${mission}"</p>
+                    <button onclick="this.parentElement.parentElement.remove()" class="bg-rose-600 text-white px-6 py-2 rounded-full font-bold">Accept Mission</button>
+                </div>
+            `;
+            document.body.appendChild(modal);
+        }
+        
+        // --- Badge data (used by the pre-game template) ---
+        const BADGES = [
+            {icon: 'fas fa-ghost', name: 'Ghost Protocol'},
+            {icon: 'fas fa-sync', name: 'Guide-ception'},
+            {icon: 'fas fa-flask', name: 'Sauce Alchemist'},
+            {icon: 'fas fa-pepper-hot', name: 'Spicy Sneeze'},
+            {icon: 'fas fa-users', name: 'Double Mirror'},
+            {icon: 'fas fa-crown', name: 'Grandma Whisperer'},
+            {icon: 'fas fa-monument', name: 'Tower of Babel'},
+            {icon: 'fas fa-ice-cream', name: 'Dessert First'},
+            {icon: 'fas fa-exclamation-triangle', name: 'The Toddler Trap'},
+            {icon: 'fas fa-broom', name: 'Clean Sweep'},
+            {icon: 'fas fa-biohazard', name: 'Iron Stomach'},
+            {icon: 'fas fa-recycle', name: 'Finishing Move'}
+        ];
+
+        // --- Pre-game printable template (blank) ---
+        function createPreGameTemplate() {
+            const rowsCount = 12; // default blank rows
+            const badgeHtml = BADGES.map(b => `<div style="display:inline-block;width:48%;margin-bottom:6px"><i class="${b.icon} text-rose-600" style="margin-right:6px"></i>${b.name}</div>`).join('');
+
+            const header = `
+                <div style="text-align:center;margin-bottom:8px">
+                    <h1 style="font-family:Fredoka, Roboto, sans-serif;color:#e11d48;margin:0;padding:0;font-size:20px;font-weight:700">Buffet Bingo — Pre-game Scorecard</h1>
+                    <p style="color:#374151;margin-top:6px;margin-bottom:0;font-size:13px">Fill in player names & scores during the meal. Use the badges to mark achievements.</p>
+                    <p style="color:#6b7280;margin-top:4px;font-size:11px">Scoring formula (to calculate totals): (Taste + Cohesion + (11 − Regret) + (11 − Waste)) / 4 — round to nearest tenth.</p>
+                </div>`;
+
+            const tableRows = Array.from({length: rowsCount}).map((_,i) => {
+                return `<tr><td style="padding:8px;border:1px solid #ddd">${i+1}.</td><td style="padding:8px;border:1px solid #ddd;width:260px">&nbsp;</td><td style="padding:8px;border:1px solid #ddd;text-align:center;width:70px">&nbsp;</td><td style="padding:8px;border:1px solid #ddd;text-align:center;width:70px">&nbsp;</td><td style="padding:8px;border:1px solid #ddd;text-align:center;width:70px">&nbsp;</td><td style="padding:8px;border:1px solid #ddd;text-align:center;width:70px">&nbsp;</td><td style="padding:8px;border:1px solid #ddd;text-align:center;width:70px">&nbsp;</td></tr>`;
+            }).join('');
+
+            const html = `
+                <html>
+                <head>
+                    <title>Buffet Bingo — Blank Scorecard</title>
+                    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+                    <style>
+                        @page { size: A4; margin: 12mm; }
+                        html,body{height:100%}
+                        body{font-family:Roboto,Arial,Helvetica,sans-serif;color:#111;margin:6mm; font-size:12px; -webkit-print-color-adjust:exact}
+                        table{border-collapse:collapse;width:100%;margin-top:6px;border-spacing:0;font-size:12px}
+                        th{background:#fde68a;padding:6px;border:1px solid #ddd;text-align:left;font-weight:700}
+                        td{padding:6px;border:1px solid #ddd}
+                        .small{font-size:11px;color:#6b7280}
+                        .badge-legend div{width:48%;display:inline-block;box-sizing:border-box;font-size:11px;margin-bottom:4px;vertical-align:middle}
+                        @media print{
+                            .page-break{page-break-after:always}
+                            body{margin:0}
+                            .no-print{display:none}
+                            table{page-break-inside:auto}
+                            tr{page-break-inside:avoid;page-break-after:auto}
+                        }
+                    </style>
+                </head>
+                <body>
+                    ${header}
+                    <div style="display:flex;gap:12px;align-items:center;margin-bottom:8px">
+                        <div style="flex:1"><strong class="small">Group / Date:</strong> ____________________________</div>
+                        <div style="flex:0 0 140px;text-align:right"><strong class="small">Round:</strong> _____</div>
+                    </div>
+                    <table>
+                        <thead>
+                            <tr>
+                                <th style="width:30px">#</th>
+                                <th>Player name (write)</th>
+                                <th style="text-align:center">Taste</th>
+                                <th style="text-align:center">Cohesion</th>
+                                <th style="text-align:center">Regret</th>
+                                <th style="text-align:center">Waste</th>
+                                <th style="text-align:center">Total</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            ${tableRows}
+                        </tbody>
+                    </table>
+
+                    <div style="margin-top:14px">
+                        <h3 style="margin:6px 0">Badge Legend</h3>
+                        <div class="badge-legend" style="display:flex;flex-wrap:wrap;gap:8px">${badgeHtml}</div>
+                        <p class="small" style="margin-top:10px">Tip: Use the badge symbols to mark achievements on your paper card. A line is provided to write names and numeric scores, totals can be calculated using the formula above.</p>
+                    </div>
+
+                    <div class="page-break"></div>
+                </body>
+                </html>`;
+
+            const w = window.open('', '_blank');
+            w.document.write(html);
+            w.document.close();
+            w.focus();
+            setTimeout(() => w.print(), 300);
+        }
+
+        // wire the new nav links
+        const preGameLink = document.getElementById('download-pre-game-template');
+        if (preGameLink) preGameLink.addEventListener('click', (e) => { e.preventDefault(); createPreGameTemplate(); });
+        const preGameLinkMobile = document.getElementById('download-pre-game-template-mobile');
+        if (preGameLinkMobile) preGameLinkMobile.addEventListener('click', (e) => { e.preventDefault(); createPreGameTemplate(); });
+    </script>
+</body>
+</html>
