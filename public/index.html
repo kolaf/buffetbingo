@@ -474,22 +474,55 @@
         }
 
         function generateBingoCard() {
-            const missions = [
-                "Find a Structural Engineer and mirror their base layer.",
-                "Follow a Sauce Scientist for 3 minutes without eye contact.",
-                "Complete a Dessert First round with Ghost Protocol.",
-                "Mirror a Grandma but skip the jello (Allergy Veto).",
-                "Find a Protein Purist and take only their seafood.",
-                "The Zero Waste Mission: Earn 'Finishing Move' this round."
+                    }
+
+        function generateBingoCard() {
+            const pick = (arr) => arr[Math.floor(Math.random() * arr.length)];
+
+            const archetypes = [
+                "Structural Engineer", "Sauce Scientist", "Grandma", 
+                "Protein Purist", "Plate-Cleaner", "Vacationer", "Scanner"
             ];
-            const mission = missions[Math.floor(Math.random() * missions.length)];
+            
+            const modifiers = [
+                "but double the sauce",
+                "but arrange everything symmetrically",
+                "and eat with your non-dominant hand",
+                "but skip the carbs",
+                "and add a random dessert item",
+                "while maintaining 'Ghost Protocol'",
+                "but you must finish in under 8 minutes",
+                "and rate every bite out loud",
+                "but only take items that are round",
+                "and take the exact same drink"
+            ];
+
+            const staticMissions = [
+                "The Monochromatic Challenge: Your entire plate must be one color family.",
+                "The Tower of Babel: Build a salad at least 4 inches high.",
+                "Dessert First: Start with a full dessert plate, then proceed to dinner.",
+                "The Texture Nightmare: Combine crunchy, slimy, and hot items on one plate.",
+                "International Waters: Put items from 3 different cuisines on one plate.",
+                "The Minimalist: Create a beautiful plate with only 3 items, widely spaced.",
+                "Sauce Boss: Create a dipping sauce using at least 4 different condiments.",
+                "The Zero Waste Mission: Earn 'Finishing Move' this round.",
+                "Find the person with the fullest plate and mirror their most precarious item."
+            ];
+
+            let mission;
+            if (Math.random() > 0.4) {
+                mission = `Find a ${pick(archetypes)} and mirror their plate, ${pick(modifiers)}.`;
+            } else {
+                mission = pick(staticMissions);
+            }
+
             const modal = document.createElement('div');
             modal.className = 'fixed inset-0 bg-black/80 flex items-center justify-center z-[100] p-4';
             modal.innerHTML = `
                 <div class="bg-white p-8 rounded-2xl text-center max-w-sm">
                     <i class="fas fa-dice text-4xl text-rose-600 mb-4"></i>
                     <h3 class="text-xl font-bold mb-4">New Mission</h3>
-                    <p class="text-gray-600 italic mb-6">"${mission}"</p>
+                    <p class="text-gray-600 italic mb-6">${mission}</p>
                     <button onclick="this.parentElement.parentElement.remove()" class="bg-rose-600 text-white px-6 py-2 rounded-full font-bold">Accept Mission</button>
                 </div>
             `;
