@@ -3,12 +3,14 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="description" content="Buffet Bingo turns dinner into a game. Follow strangers, copy their plates, and score your meal. The ultimate cure for buffet choice paralysis.">
     <title>Buffet Bingo - Let Dinner Choose You</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Fredoka:wght@400;600&family=Roboto:wght@300;400;700&display=swap" rel="stylesheet">
     <style>
-        @import url('https://fonts.googleapis.com/css2?family=Fredoka:wght@400;600&family=Roboto:wght@300;400;700&display=swap');
-
         body {
             font-family: 'Roboto', sans-serif;
             background-color: #f8fafc;
@@ -19,9 +21,23 @@
             font-family: 'Fredoka', sans-serif;
         }
 
+        /* Hero/banner now uses an inline <img> so the full image height is always visible */
+        .hero-image {
+            /* ensure banner sits below the fixed nav (nav height ≈ 4rem) */
+            margin-top: 0;
+        }
+        .hero-image img {
+            width: 100%;
+            height: auto;
+            display: block;
+            max-width: 1400px; /* reasonable maximum width */
+            margin: 0 auto;
+        }
         .hero-pattern {
-            background-color: #e11d48;
-            background-image: url("data:image/svg+xml,%3Csvg width='60' height='60' viewBox='0 0 60 60' xmlns='http://www.w3.org/2000/svg'%3E%3Cg fill='none' fill-rule='evenodd'%3E%3Cg fill='%239f1239' fill-opacity='0.2'%3E%3Cpath d='M36 34v-4h-2v4h-4v2h4v4h2v-4h4v-2h-4zm0-30V0h-2v4h-4v2h4v4h2V6h4V4h-4zM6 34v-4H4v4H0v2h4v4h2v-4h4v-2H6zM6 4V0H4v4H0v2h4v4h2V6h4V4H6z'/%3E%3C/g%3E%3C/g%3E%3C/svg%3E");
+            background: transparent;
+            min-height: auto;
+            display: block;
+            padding: 0;
         }
 
         .card-hover:hover {
@@ -69,7 +85,7 @@
 <body class="text-gray-800">
 
     <!-- Navigation -->
-    <nav class="bg-white shadow-md fixed w-full z-50">
+    <nav class="bg-white shadow-md w-full z-50">
         <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
             <div class="flex justify-between h-16">
                 <div class="flex items-center">
@@ -85,7 +101,7 @@
                     <a href="#scorecard" class="bg-rose-600 text-white px-4 py-2 rounded-full hover:bg-rose-700 transition shadow-lg">Play Now</a>
                 </div>
                 <div class="md:hidden flex items-center">
-                    <button id="mobile-menu-btn" class="text-gray-600 hover:text-rose-600 focus:outline-none">
+                    <button id="mobile-menu-btn" class="text-gray-600 hover:text-rose-600 focus:outline-none" aria-label="Toggle navigation menu" aria-expanded="false">
                         <i class="fas fa-bars text-2xl"></i>
                     </button>
                 </div>
@@ -102,17 +118,19 @@
     </nav>
 
     <!-- Hero Section -->
-    <section class="hero-pattern pt-32 pb-20 px-4 text-center text-white">
-        <div class="max-w-4xl mx-auto">
-            <h1 class="text-5xl md:text-7xl font-bold mb-6 tracking-tight drop-shadow-md">
-                Don't choose your dinner.<br>Let dinner choose you.
-            </h1>
-            <p class="text-xl md:text-2xl mb-10 text-rose-100 max-w-2xl mx-auto">
-                Join the global movement of culinary shadowing and discovery.
-            </p>
+    <!-- Banner Image (full width, keeps intrinsic height) -->
+    <section class="hero-image">
+        <div class="max-w-[1000px] mx-auto">
+            <img src="header.png" alt="Buffet Bingo header" class="w-full h-auto block shadow-2xl rounded-2xl">
+        </div>
+    </section>
+
+    <!-- Buttons directly below banner -->
+    <section class="banner-actions px-4 text-center">
+        <div class="max-w-4xl mx-auto py-6">
             <div class="flex flex-col sm:flex-row justify-center gap-4">
                 <a href="#rules" class="bg-white text-rose-600 px-8 py-3 rounded-full font-bold text-lg hover:bg-gray-100 transition shadow-lg">Read the Rules</a>
-                <button onclick="generateBingoCard()" class="border-2 border-white text-white px-8 py-3 rounded-full font-bold text-lg hover:bg-white hover:text-rose-600 transition shadow-lg">
+                <button id="btn-random-challenge" class="border-2 border-rose-600 text-rose-600 bg-white px-8 py-3 rounded-full font-bold text-lg hover:bg-rose-50 hover:text-rose-700 transition shadow-lg">
                     <i class="fas fa-dice mr-2"></i> Random Challenge
                 </button>
             </div>
@@ -120,7 +138,7 @@
     </section>
 
     <!-- The Pitch Section -->
-    <section class="py-16 bg-rose-50 border-b border-rose-100">
+    <section class="pb-16 bg-rose-50 border-b border-rose-100">
         <div class="max-w-3xl mx-auto px-6 text-center">
             <h2 class="text-3xl font-bold text-rose-900 mb-6 brand-font italic">"Wait... You want me to follow a stranger?"</h2>
             <div class="space-y-4 text-lg text-gray-700 leading-relaxed">
@@ -128,14 +146,16 @@
                     Let’s face it: left to your own devices, you’re a boring eater. You walk into a buffet and immediately go for the "safe" dinner roll and the lukewarm pasta you've had a thousand times. <b>Buffet Bingo</b> is the ultimate cure for choice paralysis. By outsourcing your culinary destiny to a total stranger, you turn a Tuesday night dinner into a high-stakes safari of flavor.
                 </p>
                 <p>
-                    Will your "Guide" lead you to a hidden 10/10 homemade peach cobbler, or will you end up staring down a precarious pile of shrimp cocktail balanced on a slice of pepperoni pizza? Only the tongs of fate can decide. Grab your friends, pin on your secret badge, and prepare for the most fun you can have with communal serving spoons. <b>It’s time to eat a meal that literally isn't your own.</b>
+                    Will your "Guide" lead you to a hidden 10/10 homemade peach cobbler, or will you end up staring down a precarious pile of shrimp cocktail balanced on a slice of pepperoni pizza? Only the tongs of fate can decide. Grab your friends, pin on your secret badge, and prepare for the most fun you can have with communal serving spoons.
                 </p>
+                <p><b>It’s time to eat a meal that literally isn't your own.</b></p>
             </div>
             <div class="mt-8 flex justify-center">
                 <div class="h-1 w-24 bg-rose-600 rounded-full"></div>
             </div>
         </div>
     </section>
+
 
     <!-- Rules Grid -->
     <section id="rules" class="py-20 bg-white">
@@ -337,7 +357,7 @@
     <section id="scorecard" class="py-20 bg-rose-600 text-white">
         <div class="max-w-4xl mx-auto px-4">
             <h2 class="text-4xl font-bold text-center mb-8 uppercase brand-font tracking-widest">Digital Scorecard</h2>
-            <form onsubmit="calculateScore(event)" class="bg-white text-gray-900 p-8 rounded-2xl shadow-xl">
+            <form id="score-form" class="bg-white text-gray-900 p-8 rounded-2xl shadow-xl">
                 <div class="grid md:grid-cols-2 gap-6 mb-4">
                     <div>
                         <label class="block text-sm font-bold mb-2">Taste Quality (1-10)</label>
@@ -419,9 +439,16 @@
     </footer>
 
     <script>
-        document.getElementById('mobile-menu-btn').addEventListener('click', () => {
-            document.getElementById('mobile-menu').classList.toggle('open');
+        const menuBtn = document.getElementById('mobile-menu-btn');
+        const menu = document.getElementById('mobile-menu');
+        
+        menuBtn.addEventListener('click', () => {
+            const isOpen = menu.classList.toggle('open');
+            menuBtn.setAttribute('aria-expanded', isOpen);
         });
+        
+        document.getElementById('score-form').addEventListener('submit', calculateScore);
+        document.getElementById('btn-random-challenge').addEventListener('click', generateBingoCard);
 
         function calculateScore(e) {
             e.preventDefault();
