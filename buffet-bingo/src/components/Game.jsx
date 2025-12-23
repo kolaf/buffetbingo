@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { Link } from 'react-router-dom';
 import { auth, db, storage } from '../firebase';
 import { signInAnonymously, onAuthStateChanged, GoogleAuthProvider, linkWithPopup, signInWithPopup, signOut, signInWithRedirect, getRedirectResult } from 'firebase/auth';
@@ -225,22 +225,35 @@ function Game() {
   const [pendingJoinId, setPendingJoinId] = useState(null);
   const [toastMessage, setToastMessage] = useState(null);
   const [isTableClosed, setIsTableClosed] = useState(false);
+  const redirectCheckRef = useRef(false);
 
   // 1. Auth
   useEffect(() => {
     // Handle redirect result for mobile login
-    getRedirectResult(auth).catch((error) => {
-      console.error("Redirect login error:", error);
-      if (error.code === 'auth/unauthorized-domain') {
-        alert(`Configuration Error: The domain "${window.location.hostname}" is not authorized. Add it to Firebase Console > Authentication > Settings > Authorized Domains.`);
-      } else {
-        alert("Login failed: " + error.message);
+    const handleRedirect = async () => {
+      try {
+        await getRedirectResult(auth);
+      } catch (error) {
+        console.error("Redirect login error:", error);
+        if (error.code === 'auth/unauthorized-domain') {
+          alert(`Configuration Error: The domain "${window.location.hostname}" is not authorized. Add it to Firebase Console > Authentication > Settings > Authorized Domains.`);
+        } else {
+          alert("Login failed: " + error.message);
+        }
+      } finally {
+        redirectCheckRef.current = true;
+        if (!auth.currentUser) {
+          signInAnonymously(auth);
+        }
       }
-    });
+    };
+    handleRedirect();
 
     const unsubscribe = onAuthStateChanged(auth, async (u) => {
       if (!u) {
-        signInAnonymously(auth);
+        if (redirectCheckRef.current) {
+          signInAnonymously(auth);
+        }
       } else {
         // If logged in via provider but name is missing, force reload to fetch profile
         if (!u.isAnonymous && !u.displayName) {
