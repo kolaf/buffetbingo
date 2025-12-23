@@ -1,6 +1,6 @@
 {
   "hosting": {
-    "public": "public",
+    "public": "buffet-bingo/dist",
     "ignore": [
       "firebase.json",
       "**/.*",
