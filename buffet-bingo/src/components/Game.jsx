@@ -1,10 +1,10 @@
 import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { auth, db, storage } from '../firebase';
-import { signInAnonymously, onAuthStateChanged, GoogleAuthProvider, linkWithPopup } from 'firebase/auth';
+import { signInAnonymously, onAuthStateChanged, GoogleAuthProvider, linkWithPopup, signInWithPopup, signOut } from 'firebase/auth';
 import {
   doc, setDoc, getDoc, onSnapshot, collection,
-  addDoc, query, orderBy, deleteDoc
+  addDoc, query, orderBy, deleteDoc, where, getDocs, serverTimestamp
 } from 'firebase/firestore';
 import { ref, uploadBytes, getDownloadURL, deleteObject } from 'firebase/storage';
 import { BADGES } from '../constants/badges';
@@ -216,20 +216,42 @@ function Game() {
   const [tableId, setTableId] = useState("");
   const [players, setPlayers] = useState([]);
   const [isScoring, setIsScoring] = useState(false);
-  const [playerName, setPlayerName] = useState("");
+  const [shortCode, setShortCode] = useState("");
+  const [playerName, setPlayerName] = useState(() => localStorage.getItem('buffetBingo_playerName') || "");
   const [joinCode, setJoinCode] = useState("");
   const [hostId, setHostId] = useState(null);
+  const [myTables, setMyTables] = useState([]);
+  const [copied, setCopied] = useState(false);
+  const [pendingJoinId, setPendingJoinId] = useState(null);
+  const [toastMessage, setToastMessage] = useState(null);
+  const [isTableClosed, setIsTableClosed] = useState(false);
 
   // 1. Auth
   useEffect(() => {
-    onAuthStateChanged(auth, (u) => {
-      if (!u) signInAnonymously(auth);
-      else setUser(u);
+    const unsubscribe = onAuthStateChanged(auth, async (u) => {
+      if (!u) {
+        signInAnonymously(auth);
+      } else {
+        // If logged in via provider but name is missing, force reload to fetch profile
+        if (!u.isAnonymous && !u.displayName) {
+          await u.reload();
+          u = auth.currentUser;
+        }
+        setUser(u);
+        if (u?.displayName) {
+          setPlayerName((prev) => prev || u.displayName);
+        }
+      }
     });
+    return () => unsubscribe();
   }, []);
 
   // 1.5 Restore Session
   useEffect(() => {
+    // If there is a join link, skip restoration to allow the link to take precedence
+    const urlParams = new URLSearchParams(window.location.search);
+    if (urlParams.get('join')) return;
+
     const storedTableId = localStorage.getItem('buffetBingo_tableId');
     const storedTimestamp = localStorage.getItem('buffetBingo_timestamp');
 
@@ -247,9 +269,101 @@ function Game() {
     }
   }, []);
 
+  // 1.5b Handle deep links for joining
+  useEffect(() => {
+    const handleJoinLink = async () => {
+      const urlParams = new URLSearchParams(window.location.search);
+      const joinId = urlParams.get('join');
+
+      if (joinId) {
+        // Force clear any existing session to prioritize the link
+        setTableId("");
+        localStorage.removeItem('buffetBingo_tableId');
+        
+        setPendingJoinId(joinId);
+        window.history.replaceState({}, document.title, window.location.pathname + window.location.hash);
+        
+        try {
+          const tableSnap = await getDoc(doc(db, "tables", joinId));
+          if (tableSnap.exists()) {
+            setJoinCode(tableSnap.data().shortCode);
+          }
+        } catch (error) {
+          console.error("Error fetching table from join link:", error);
+        }
+      }
+    };
+    handleJoinLink();
+  }, []); // Run only once on mount
+
+  // 1.6 Persist Player Name
+  useEffect(() => {
+    localStorage.setItem('buffetBingo_playerName', playerName);
+  }, [playerName]);
+
+  // 1.7 Fetch User's Tables
+  useEffect(() => {
+    if (user && !user.isAnonymous) {
+      const q = query(collection(db, "tables"), where("host", "==", user.uid), orderBy("createdAt", "desc"));
+      const unsubscribe = onSnapshot(q, (snapshot) => {
+        setMyTables(snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() })));
+      });
+      return unsubscribe;
+    } else {
+      setMyTables([]);
+    }
+  }, [user]);
+
+  // Helper to perform the actual join database operations
+  const performJoin = async (tId) => {
+    const playerRef = doc(db, "tables", tId, "players", user.uid);
+    const playerSnap = await getDoc(playerRef);
+
+    let nameToUse = null;
+    if (!playerSnap.exists()) {
+      nameToUse = playerName || user.displayName || "Guest Ninja";
+    } else if (playerName) {
+      nameToUse = playerName;
+    }
+
+    if (nameToUse) {
+      const q = query(collection(db, "tables", tId, "players"), where("name", "==", nameToUse));
+      const querySnapshot = await getDocs(q);
+      if (querySnapshot.docs.some(d => d.id !== user.uid)) {
+        return alert(`The name "${nameToUse}" is already taken. Please choose another.`);
+      }
+    }
+
+    setTableId(tId);
+    localStorage.setItem('buffetBingo_tableId', tId);
+    localStorage.setItem('buffetBingo_timestamp', new Date().getTime().toString());
+
+    if (!playerSnap.exists()) {
+      await setDoc(playerRef, {
+        name: nameToUse, score: 0, photoUrl: null
+      });
+    } else if (playerName) {
+      await setDoc(playerRef, { name: playerName }, { merge: true });
+    }
+  };
+
+  // 1.8 Auto-Join if Pending ID exists and User has Name
+  useEffect(() => {
+    if (user && pendingJoinId) {
+      // Only auto-join if we have a name ready (returning user or Google user)
+      const hasName = user.displayName || (playerName && playerName.trim().length > 0);
+      if (hasName) {
+        performJoin(pendingJoinId);
+        setPendingJoinId(null);
+      }
+    }
+  }, [user, pendingJoinId]); // Intentionally exclude playerName to avoid auto-joining while typing
+
   // 2. Real-time Players Listener (Sub-collection)
   useEffect(() => {
     if (!tableId) return;
+
+    let isInitialSnapshot = true;
 
     // Listen to the 'players' sub-collection inside the table
     const playersRef = collection(db, "tables", tableId, "players");
@@ -257,10 +371,23 @@ function Game() {
       const playerList = snapshot.docs.map(doc => ({
         uid: doc.id,
         ...doc.data()
-      })).filter(p => p.photoUrl);
+      }));
       // Sort by score descending
       playerList.sort((a, b) => parseFloat(b.score || 0) - parseFloat(a.score || 0));
       setPlayers(playerList);
+
+      if (!isInitialSnapshot) {
+        snapshot.docChanges().forEach((change) => {
+          if (change.type === "added") {
+            const newPlayer = change.doc.data();
+            if (auth.currentUser && change.doc.id !== auth.currentUser.uid) {
+              setToastMessage(`${newPlayer.name} joined!`);
+              setTimeout(() => setToastMessage(null), 3000);
+            }
+          }
+        });
+      }
+      isInitialSnapshot = false;
     });
 
     return unsubscribe;
@@ -270,44 +397,66 @@ function Game() {
   useEffect(() => {
     if (!tableId) {
       setHostId(null);
+      setShortCode("");
+      setIsTableClosed(false);
       return;
     }
-    getDoc(doc(db, "tables", tableId)).then(snap => {
-      if (snap.exists()) setHostId(snap.data().host);
+    const unsub = onSnapshot(doc(db, "tables", tableId), (snap) => {
+      if (snap.exists()) {
+        const data = snap.data();
+        setHostId(data.host);
+        setShortCode(data.shortCode);
+        setIsTableClosed(data.status === 'closed');
+      }
     });
+    return unsub;
   }, [tableId]);
 
   // Actions
   const createTable = async () => {
     if (!user) return alert("Please wait for login to complete.");
-    console.log("User is authenticated:", user.uid);
     
-    // if (user) {
-    //   console.log("User is authenticated:", user.uid);
-    //   const docRef = doc(db, "myCollection", "myDocument");
-    //   setDoc(docRef, { data: "test" })
-    //     .then(() => console.log("Document successfully written!"))
-    //     .catch((error) => console.error("Error writing document:", error));
-    // } else {
-    //   // User is signed out. Attempt anonymous sign-in.
-    //   console.log("User is not authenticated. Signing in anonymously...");
-    //   signInAnonymously(auth)
-    //     .then(() => console.log("Anonymous sign-in successful."))
-    //     .catch((error) => console.error("Error signing in anonymously:", error));
-    // }
-    const code = Math.random().toString(36).substring(2, 6).toUpperCase();
+    // Generate GUID for the table
+    const guid = crypto.randomUUID ? crypto.randomUUID() : Date.now().toString(36) + Math.random().toString(36).substr(2);
+    
+    // Generate a unique 4-letter short code
+    let code = "";
+    let isUnique = false;
+    const twoWeeksAgo = new Date(Date.now() - 12096e5);
+
+    for (let i = 0; i < 20; i++) {
+      code = Math.random().toString(36).substring(2, 6).toUpperCase();
+      // Check if this code is in use by any table created in the last 2 weeks
+      const q = query(collection(db, "tables"), where("shortCode", "==", code));
+      const snap = await getDocs(q);
+      
+      const activeCollision = snap.docs.some(d => {
+        const data = d.data();
+        return data.createdAt?.toDate() > twoWeeksAgo;
+      });
+
+      if (!activeCollision) {
+        isUnique = true;
+        break;
+      }
+    }
+
+    if (!isUnique) return alert("Could not generate a unique room code. Please try again.");
 
     try {
-      console.log("Creating table with code:", code);
-      await setDoc(doc(db, "tables", code), { host: user.uid, createdAt: new Date() });
+      console.log("Creating table with GUID:", guid, "Code:", code);
+      await setDoc(doc(db, "tables", guid), { 
+        host: user.uid, 
+        createdAt: serverTimestamp(),
+        shortCode: code
+      });
 
       // Add self to sub-collection
-      console.log("Adding self to sub-collection");
-      await setDoc(doc(db, "tables", code, "players", user.uid), {
+      await setDoc(doc(db, "tables", guid, "players", user.uid), {
         name: user.displayName || playerName || "Host (You)", score: 0, photoUrl: null
       });
-      setTableId(code);
-      localStorage.setItem('buffetBingo_tableId', code);
+      setTableId(guid);
+      localStorage.setItem('buffetBingo_tableId', guid);
       localStorage.setItem('buffetBingo_timestamp', new Date().getTime().toString());
     } catch (error) {
       console.error("Error creating table:", error);
@@ -316,30 +465,49 @@ function Game() {
 
   const joinTable = async (e) => {
     e.preventDefault();
+    
+    if (pendingJoinId) {
+      await performJoin(pendingJoinId);
+      setPendingJoinId(null);
+      return;
+    }
+
     if (!joinCode) return;
     const code = joinCode.toUpperCase();
-    const tableSnap = await getDoc(doc(db, "tables", code));
-    if (tableSnap.exists()) {
-      setTableId(code);
-      localStorage.setItem('buffetBingo_tableId', code);
-      localStorage.setItem('buffetBingo_timestamp', new Date().getTime().toString());
-      const playerRef = doc(db, "tables", code, "players", user.uid);
-      const playerSnap = await getDoc(playerRef);
+    
+    // Find table by shortCode, prioritizing recent ones
+    const twoWeeksAgo = new Date(Date.now() - 12096e5);
+    const q = query(collection(db, "tables"), where("shortCode", "==", code));
+    const snap = await getDocs(q);
 
-      if (!playerSnap.exists()) {
-        await setDoc(playerRef, {
-          name: user.displayName || playerName || "Guest Ninja", score: 0, photoUrl: null
-        });
-      } else if (playerName) {
-        await setDoc(playerRef, { name: playerName }, { merge: true });
-      }
+    // Filter for active tables (created < 2 weeks ago)
+    const activeTables = snap.docs.filter(d => {
+      const data = d.data();
+      return data.createdAt?.toDate() > twoWeeksAgo;
+    });
+
+    // Sort by creation date descending (newest first)
+    activeTables.sort((a, b) => b.data().createdAt?.toMillis() - a.data().createdAt?.toMillis());
+
+    if (activeTables.length > 0) {
+      const targetTable = activeTables[0];
+      const targetId = targetTable.id;
+
+      await performJoin(targetId);
     } else {
       alert("Table not found");
     }
   };
 
-  const leaveTable = () => {
+  const leaveTable = async () => {
     if (window.confirm("Are you sure you want to leave this table?")) {
+      if (tableId && user) {
+        try {
+          await deleteDoc(doc(db, "tables", tableId, "players", user.uid));
+        } catch (error) {
+          console.error("Error removing player:", error);
+        }
+      }
       setTableId("");
       setPlayers([]);
       setIsScoring(false);
@@ -351,7 +519,7 @@ function Game() {
   const addToHallOfFame = async (playerData) => {
     if (!user) return;
     
-    let currentUser = auth.currentUser;
+    let currentUser = auth.currentUser || user;
 
     // Enforce authentication for Hall of Fame
     if (currentUser.isAnonymous) {
@@ -373,7 +541,6 @@ function Game() {
 
     // Force reload to ensure we have the latest display name from the provider
     await currentUser.reload();
-    currentUser = auth.currentUser;
 
     try {
       await addDoc(collection(db, "hallOfFame"), {
@@ -388,6 +555,55 @@ function Game() {
     } catch (error) {
       console.error("Error adding to Hall of Fame:", error);
       alert("Something went wrong adding you to the Hall of Fame.");
+    }
+  };
+
+  const handleShare = () => {
+    const shareLink = `${window.location.origin}/play?join=${tableId}`;
+    navigator.clipboard.writeText(shareLink).then(() => {
+      setCopied(true);
+      setTimeout(() => setCopied(false), 2000);
+    });
+  };
+
+  const handleLogin = async () => {
+    const provider = new GoogleAuthProvider();
+    try {
+      await signInWithPopup(auth, provider);
+    } catch (error) {
+      console.error("Login failed:", error);
+    }
+  };
+
+  const handleLogout = async () => {
+    await signOut(auth);
+  };
+
+  const closeTable = async () => {
+    if (!window.confirm("Are you sure you want to close the table? No more plates can be submitted.")) return;
+    try {
+      await setDoc(doc(db, "tables", tableId), { status: 'closed' }, { merge: true });
+    } catch (error) {
+      console.error("Error closing table:", error);
+    }
+  };
+
+  const deleteFullTable = async (tId, e) => {
+    e.stopPropagation();
+    if (!window.confirm("Delete this table and all its plates? This cannot be undone.")) return;
+    
+    try {
+      const playersSnap = await getDocs(collection(db, "tables", tId, "players"));
+      const promises = playersSnap.docs.map(async (p) => {
+        try { await deleteObject(ref(storage, `plates/${tId}/${p.id}.jpg`)); } catch(err) {}
+        return deleteDoc(p.ref);
+      });
+      await Promise.all(promises);
+      await deleteDoc(doc(db, "tables", tId));
+      setMyTables(prev => prev.filter(t => t.id !== tId));
+    } catch (error) {
+      console.error("Delete failed", error);
+      alert("Failed to delete table");
     }
   };
 
@@ -429,7 +645,7 @@ function Game() {
                 {tableId && (
                     <div className="flex items-center gap-3">
                         <div className="bg-slate-100 px-3 py-1 rounded-full text-sm font-mono font-bold text-slate-600">
-                            Table: {tableId}
+                            Table: {shortCode || tableId}
                         </div>
                         <button onClick={leaveTable} className="text-slate-400 hover:text-rose-600 transition" title="Leave Table">
                             <i className="fas fa-sign-out-alt"></i>
@@ -443,16 +659,36 @@ function Game() {
             {!tableId ? (
                 // Login / Join Screen
                 <div className="max-w-md mx-auto mt-10">
-                    <div className="bg-white p-8 rounded-3xl shadow-xl border border-slate-100 text-center">
+                    <div className="bg-white p-8 rounded-3xl shadow-xl border border-slate-100 text-center relative">
+                        <div className="absolute top-4 right-4">
+                            {user?.isAnonymous ? (
+                                <button onClick={handleLogin} className="text-xs font-bold text-rose-600 hover:text-rose-700">
+                                    <i className="fas fa-sign-in-alt mr-1"></i> Login
+                                </button>
+                            ) : (
+                                <div className="flex flex-col items-end">
+                                    <span className="text-xs font-bold text-slate-700 mb-1">{user?.email}</span>
+                                    <button onClick={handleLogout} className="text-xs font-bold text-slate-400 hover:text-slate-600">
+                                        Logout
+                                    </button>
+                                </div>
+                            )}
+                        </div>
                         <div className="w-16 h-16 bg-rose-100 rounded-full flex items-center justify-center mx-auto mb-6 text-rose-600 text-2xl">
                             <i className="fas fa-dice"></i>
                         </div>
                         <h1 className="text-3xl font-bold text-slate-900 mb-2" style={{ fontFamily: "'Fredoka', sans-serif" }}>Start Playing</h1>
                         <p className="text-slate-500 mb-8">Start a table or join your friends.</p>
 
+                        {pendingJoinId && (
+                            <div className="bg-rose-50 text-rose-600 px-4 py-2 rounded-lg mb-6 text-sm font-bold animate-pulse">
+                                <i className="fas fa-link mr-2"></i> Joining Table...
+                            </div>
+                        )}
+
                         {!user?.displayName && (
                             <div className="mb-6 text-left">
-                                <label className="block text-xs font-bold text-slate-500 uppercase mb-1 ml-1">Your Name</label>
+                                <label className="block text-xs font-bold text-slate-500 uppercase mb-1 ml-1">Your Name <span className="text-rose-500">*</span></label>
                                 <input
                                     placeholder="e.g. Ninja Chef"
                                     value={playerName}
@@ -462,20 +698,7 @@ function Game() {
                             </div>
                         )}
 
-                        <button 
-                            onClick={createTable} 
-                            disabled={!user} 
-                            className="w-full bg-rose-600 text-white py-4 rounded-xl font-bold hover:bg-rose-700 transition shadow-lg mb-6 flex items-center justify-center"
-                        >
-                            {user ? <><i className="fas fa-plus-circle mr-2"></i> Create New Table</> : "Connecting..."}
-                        </button>
-
-                        <div className="relative mb-6">
-                            <div className="absolute inset-0 flex items-center"><div className="w-full border-t border-slate-200"></div></div>
-                            <div className="relative flex justify-center text-sm"><span className="px-2 bg-white text-slate-400">OR JOIN EXISTING</span></div>
-                        </div>
-
-                        <form onSubmit={joinTable} className="flex gap-2">
+                        <form onSubmit={joinTable} className="flex gap-2 mb-6">
                             <input 
                                 value={joinCode}
                                 onChange={(e) => setJoinCode(e.target.value)}
@@ -485,12 +708,47 @@ function Game() {
                             />
                             <button 
                                 type="submit"
-                                disabled={!user || !joinCode}
-                                className="bg-slate-900 text-white px-6 rounded-xl font-bold hover:bg-slate-800 transition shadow-lg"
+                                disabled={!user || !joinCode || !playerName.trim()}
+                                className="bg-slate-900 text-white px-6 rounded-xl font-bold hover:bg-slate-800 transition shadow-lg disabled:opacity-50"
                             >
                                 Join
                             </button>
                         </form>
+
+                        <div className="relative mb-6">
+                            <div className="absolute inset-0 flex items-center"><div className="w-full border-t border-slate-200"></div></div>
+                            <div className="relative flex justify-center text-sm"><span className="px-2 bg-white text-slate-400">OR CREATE NEW</span></div>
+                        </div>
+
+                        <button 
+                            onClick={createTable} 
+                            disabled={!user || !playerName.trim()} 
+                            className="w-full bg-rose-600 text-white py-4 rounded-xl font-bold hover:bg-rose-700 transition shadow-lg flex items-center justify-center disabled:opacity-50" 
+                        >
+                            {user ? <><i className="fas fa-plus-circle mr-2"></i> Create New Table</> : "Connecting..."}
+                        </button>
+
+                        {myTables.length > 0 && (
+                            <div className="mt-8 pt-6 border-t border-slate-100">
+                                <h3 className="text-sm font-bold text-slate-400 uppercase tracking-wider mb-4">Your Tables</h3>
+                                <div className="space-y-2 max-h-48 overflow-y-auto">
+                                    {myTables.map(t => (
+                                        <div key={t.id} onClick={() => { setTableId(t.id); localStorage.setItem('buffetBingo_tableId', t.id); localStorage.setItem('buffetBingo_timestamp', new Date().getTime().toString()); }} className="flex justify-between items-center p-3 bg-slate-50 rounded-xl hover:bg-rose-50 cursor-pointer transition group">
+                                            <div className="text-left">
+                                                <div className="font-mono font-bold text-slate-700">{t.shortCode || t.id}</div>
+                                                <div className="text-xs text-slate-400">{t.createdAt?.seconds ? new Date(t.createdAt.seconds * 1000).toLocaleDateString() : 'Unknown date'}</div>
+                                            </div>
+                                            <button 
+                                                onClick={(e) => deleteFullTable(t.id, e)}
+                                                className="w-8 h-8 flex items-center justify-center rounded-full text-slate-300 hover:bg-rose-100 hover:text-rose-600 transition"
+                                            >
+                                                <i className="fas fa-trash-alt text-xs"></i>
+                                            </button>
+                                        </div>
+                                    ))}
+                                </div>
+                            </div>
+                        )}
                     </div>
                 </div>
             ) : isScoring ? (
@@ -507,18 +765,57 @@ function Game() {
                     <div className="flex flex-col sm:flex-row justify-between items-center mb-8 gap-4">
                         <div>
                             <h2 className="text-2xl font-bold text-slate-900">Live Scoreboard</h2>
-                            <p className="text-slate-500">Waiting for plates...</p>
+                            <p className={`${isTableClosed ? "text-rose-600 font-bold" : "text-slate-500"}`}>
+                                {isTableClosed ? "Table Closed" : "Waiting for plates..."}
+                            </p>
                         </div>
-                        <button 
-                            onClick={() => setIsScoring(true)} 
-                            className="bg-rose-600 text-white px-6 py-3 rounded-full font-bold hover:bg-rose-700 transition shadow-lg flex items-center"
-                        >
-                            <i className="fas fa-camera mr-2"></i> Add Plate
-                        </button>
+                        <div className="flex items-center gap-2">
+                            <button
+                                onClick={handleShare}
+                                className="bg-slate-200 text-slate-800 px-6 py-3 rounded-full font-bold hover:bg-slate-300 transition shadow-sm flex items-center w-36 justify-center"
+                            >
+                                {copied ? (
+                                    <><i className="fas fa-check mr-2"></i> Copied!</>
+                                ) : (
+                                    <><i className="fas fa-share-alt mr-2"></i> Share</>
+                                )}
+                            </button>
+                            
+                            {user && user.uid === hostId && !isTableClosed && (
+                                <button 
+                                    onClick={closeTable}
+                                    className="bg-slate-800 text-white px-6 py-3 rounded-full font-bold hover:bg-slate-900 transition shadow-sm flex items-center"
+                                >
+                                    <i className="fas fa-lock mr-2"></i> Close
+                                </button>
+                            )}
+
+                            {!isTableClosed && (
+                                <button 
+                                    onClick={() => setIsScoring(true)} 
+                                    className="bg-rose-600 text-white px-6 py-3 rounded-full font-bold hover:bg-rose-700 transition shadow-lg flex items-center"
+                                >
+                                    <i className="fas fa-camera mr-2"></i> Add Plate
+                                </button>
+                            )}
+                        </div>
+                    </div>
+
+                    {/* Player List */}
+                    <div className="mb-8 flex flex-wrap gap-2 items-center">
+                        <span className="text-xs font-bold text-slate-400 uppercase tracking-wider mr-2">
+                            <i className="fas fa-users mr-1"></i> Players ({players.length})
+                        </span>
+                        {players.map(p => (
+                            <div key={p.uid} className={`px-3 py-1 rounded-full text-xs font-bold border flex items-center gap-2 ${p.photoUrl ? 'bg-emerald-50 text-emerald-700 border-emerald-200' : 'bg-white text-slate-500 border-slate-200'}`}>
+                                {p.name}
+                                {p.photoUrl && <i className="fas fa-check-circle text-emerald-500"></i>}
+                            </div>
+                        ))}
                     </div>
 
                     <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
-                        {players.map((p, index) => {
+                        {players.filter(p => p.photoUrl).map((p, index) => {
                             const scoreVal = parseFloat(p.score || 0);
                             const isMe = user && p.uid === user.uid;
                             let cardStyle = "border-slate-100 shadow-sm";
@@ -631,7 +928,7 @@ function Game() {
                         )})}
                     </div>
                     
-                    {players.length === 0 && (
+                    {players.filter(p => p.photoUrl).length === 0 && (
                         <div className="text-center py-20 bg-white rounded-3xl border border-dashed border-slate-200">
                             <div className="text-slate-300 text-6xl mb-4"><i className="fas fa-utensils"></i></div>
                             <p className="text-slate-500 font-medium">No plates submitted yet.</p>
@@ -641,6 +938,15 @@ function Game() {
                 </div>
             )}
         </div>
+
+        {toastMessage && (
+            <div className="fixed bottom-6 right-6 bg-slate-900 text-white px-6 py-4 rounded-2xl shadow-2xl z-50 flex items-center gap-3 transition-all">
+                <div className="bg-emerald-500 w-8 h-8 rounded-full flex items-center justify-center">
+                    <i className="fas fa-user-plus text-sm"></i>
+                </div>
+                <span className="font-bold">{toastMessage}</span>
+            </div>
+        )}
     </div>
   );
 }
