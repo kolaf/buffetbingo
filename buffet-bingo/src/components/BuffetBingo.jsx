@@ -204,6 +204,7 @@ const BuffetBingo = () => {
                         <span className="text-2xl font-bold text-gray-900 brand-font">Buffet Bingo</span>
                     </Link>
                     <div className="hidden md:flex items-center space-x-8">
+                        <Link to="/hall-of-fame" className="nav-link text-gray-600 hover:text-rose-600 font-medium">Hall of Fame</Link>
                         <a href="#rules" className="nav-link text-gray-600 hover:text-rose-600 font-medium">Rules</a>
                         <a href="#scouting" className="nav-link text-gray-600 hover:text-rose-600 font-medium">Scouting</a>
                         <a href="#badges" className="nav-link text-gray-600 hover:text-rose-600 font-medium">Badges</a>
@@ -224,6 +225,7 @@ const BuffetBingo = () => {
                 </div>
             </div>
             <div id="mobile-menu" className={`md:hidden bg-white shadow-lg border-t ${isMobileMenuOpen ? 'open' : ''}`}>
+                <Link to="/hall-of-fame" onClick={closeMenu} className="block py-2 px-4 text-sm hover:bg-gray-100">Hall of Fame</Link>
                 <a href="#rules" onClick={closeMenu} className="block py-2 px-4 text-sm hover:bg-gray-100">Rules</a>
                 <a href="#scouting" onClick={closeMenu} className="block py-2 px-4 text-sm hover:bg-gray-100">Scouting</a>
                 <a href="#badges" onClick={closeMenu} className="block py-2 px-4 text-sm hover:bg-gray-100">Badges</a>

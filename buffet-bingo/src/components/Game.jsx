@@ -1,12 +1,12 @@
 import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { auth, db, storage } from '../firebase';
-import { signInAnonymously, onAuthStateChanged } from 'firebase/auth';
+import { signInAnonymously, onAuthStateChanged, GoogleAuthProvider, linkWithPopup } from 'firebase/auth';
 import {
   doc, setDoc, getDoc, onSnapshot, collection,
-  addDoc, query, orderBy
+  addDoc, query, orderBy, deleteDoc
 } from 'firebase/firestore';
-import { ref, uploadBytes, getDownloadURL } from 'firebase/storage';
+import { ref, uploadBytes, getDownloadURL, deleteObject } from 'firebase/storage';
 import { BADGES } from '../constants/badges';
 
 // --- COMPONENT: Score Entry Form ---
@@ -218,6 +218,7 @@ function Game() {
   const [isScoring, setIsScoring] = useState(false);
   const [playerName, setPlayerName] = useState("");
   const [joinCode, setJoinCode] = useState("");
+  const [hostId, setHostId] = useState(null);
 
   // 1. Auth
   useEffect(() => {
@@ -263,6 +264,17 @@ function Game() {
     });
 
     return unsubscribe;
+  }, [tableId]);
+
+  // 2.5 Fetch Host ID
+  useEffect(() => {
+    if (!tableId) {
+      setHostId(null);
+      return;
+    }
+    getDoc(doc(db, "tables", tableId)).then(snap => {
+      if (snap.exists()) setHostId(snap.data().host);
+    });
   }, [tableId]);
 
   // Actions
@@ -333,6 +345,69 @@ function Game() {
       setIsScoring(false);
       localStorage.removeItem('buffetBingo_tableId');
       localStorage.removeItem('buffetBingo_timestamp');
+    }
+  };
+
+  const addToHallOfFame = async (playerData) => {
+    if (!user) return;
+    
+    let currentUser = auth.currentUser;
+
+    // Enforce authentication for Hall of Fame
+    if (currentUser.isAnonymous) {
+      if (!window.confirm("To join the Hall of Fame, you must link a Google account to verify you are a real Ninja. Proceed?")) {
+        return;
+      }
+      
+      const provider = new GoogleAuthProvider();
+      try {
+        const result = await linkWithPopup(currentUser, provider);
+        currentUser = result.user;
+        setUser(currentUser);
+      } catch (error) {
+        console.error("Auth Error:", error);
+        alert("Authentication failed or cancelled. Could not join Hall of Fame.");
+        return;
+      }
+    }
+
+    // Force reload to ensure we have the latest display name from the provider
+    await currentUser.reload();
+    currentUser = auth.currentUser;
+
+    try {
+      await addDoc(collection(db, "hallOfFame"), {
+        ...playerData,
+        name: currentUser.displayName || playerData.name,
+        hallOfFameJoinedAt: new Date(),
+        userId: currentUser.uid,
+        originTableId: tableId
+      });
+      await setDoc(doc(db, "tables", tableId, "players", currentUser.uid), { inHallOfFame: true }, { merge: true });
+      alert("You have been immortalized in the Hall of Fame!");
+    } catch (error) {
+      console.error("Error adding to Hall of Fame:", error);
+      alert("Something went wrong adding you to the Hall of Fame.");
+    }
+  };
+
+  const deletePlate = async (targetUserId) => {
+    if (!user || !tableId) return;
+    if (!window.confirm("Are you sure you want to delete this plate? This cannot be undone.")) return;
+
+    try {
+      await deleteDoc(doc(db, "tables", tableId, "players", targetUserId));
+      
+      // Attempt to delete the photo from storage
+      const storageRef = ref(storage, `plates/${tableId}/${targetUserId}.jpg`);
+      try {
+        await deleteObject(storageRef);
+      } catch (e) {
+        console.log("Storage delete error (ignore):", e);
+      }
+    } catch (error) {
+      console.error("Error deleting plate:", error);
+      alert("Failed to delete plate.");
     }
   };
 
@@ -445,6 +520,7 @@ function Game() {
                     <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
                         {players.map((p, index) => {
                             const scoreVal = parseFloat(p.score || 0);
+                            const isMe = user && p.uid === user.uid;
                             let cardStyle = "border-slate-100 shadow-sm";
                             let RankBadge = null;
 
@@ -483,6 +559,15 @@ function Game() {
                                             <i className="fas fa-image text-4xl"></i>
                                         </div>
                                     )}
+                                    {(isMe || (user && user.uid === hostId)) && (
+                                        <button 
+                                            onClick={() => deletePlate(p.uid)}
+                                            className="absolute bottom-2 left-2 bg-white/90 text-rose-600 w-8 h-8 rounded-full flex items-center justify-center shadow-sm hover:bg-rose-600 hover:text-white transition z-20"
+                                            title="Delete Plate"
+                                        >
+                                            <i className="fas fa-trash-alt text-xs"></i>
+                                        </button>
+                                    )}
                                     <div className="absolute top-2 right-2 bg-black/50 text-white text-xs px-2 py-1 rounded-md backdrop-blur-sm">
                                         {p.submittedAt?.seconds ? new Date(p.submittedAt.seconds * 1000).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'}) : 'Just now'}
                                     </div>
@@ -490,7 +575,7 @@ function Game() {
                                 <div className="p-5">
                                     <div className="flex justify-between items-start mb-2">
                                         <h3 className="font-bold text-slate-900 truncate pr-2">{p.name}</h3>
-                                        <div className={`text-2xl font-bold ${parseFloat(p.score) >= 8 ? 'text-emerald-500' : parseFloat(p.score) >= 5 ? 'text-amber-500' : 'text-rose-500'}`}>
+                                        <div className={`text-2xl .-bold ${parseFloat(p.score) >= 8 ? 'text-emerald-500' : parseFloat(p.score) >= 5 ? 'text-amber-500' : 'text-rose-500'}`}>
                                             {p.score || 0}
                                         </div>
                                     </div>
@@ -525,6 +610,20 @@ function Game() {
                                                     <span key={badgeName} title={badgeName} className={`text-xs px-2 py-1 rounded-full bg-slate-50 border border-slate-100 ${badge.color}`}><i className={badge.icon}></i></span>
                                                 );
                                             })}
+                                        </div>
+                                    )}
+
+                                    {isMe && !p.inHallOfFame && parseFloat(p.score) > 0 && (
+                                        <button 
+                                            onClick={() => addToHallOfFame(p)}
+                                            className="w-full mt-4 bg-slate-900 text-white py-2 rounded-lg text-sm font-bold hover:bg-slate-800 transition flex items-center justify-center gap-2"
+                                        >
+                                            <i className="fas fa-star text-yellow-400"></i> Add to Hall of Fame
+                                        </button>
+                                    )}
+                                    {p.inHallOfFame && (
+                                        <div className="w-full mt-4 bg-yellow-50 text-yellow-700 py-2 rounded-lg text-sm font-bold text-center border border-yellow-200">
+                                            <i className="fas fa-check-circle mr-1"></i> In Hall of Fame
                                         </div>
                                     )}
                                 </div>
