@@ -247,6 +247,9 @@ const BuffetBingo = () => {
             <div className="max-w-4xl mx-auto py-6">
                 <div className="flex flex-col sm:flex-row justify-center gap-4">
                     <a href="#rules" className="bg-white text-rose-600 px-8 py-3 rounded-full font-bold text-lg hover:bg-gray-100 transition shadow-lg">Read the Rules</a>
+                    <Link to="/play" className="bg-rose-600 text-white px-8 py-3 rounded-full font-bold text-lg hover:bg-rose-700 transition shadow-lg">
+                        Play Now
+                    </Link>
                     <button onClick={generateBingoCard} className="border-2 border-rose-600 text-rose-600 bg-white px-8 py-3 rounded-full font-bold text-lg hover:bg-rose-50 hover:text-rose-700 transition shadow-lg">
                         <i className="fas fa-dice mr-2"></i> Random Challenge
                     </button>
