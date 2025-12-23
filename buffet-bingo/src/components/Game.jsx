@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { auth, db, storage } from '../firebase';
-import { signInAnonymously, onAuthStateChanged, GoogleAuthProvider, linkWithPopup, signInWithPopup, signOut, signInWithRedirect } from 'firebase/auth';
+import { signInAnonymously, onAuthStateChanged, GoogleAuthProvider, linkWithPopup, signInWithPopup, signOut, signInWithRedirect, getRedirectResult } from 'firebase/auth';
 import {
   doc, setDoc, getDoc, onSnapshot, collection,
   addDoc, query, orderBy, deleteDoc, where, getDocs, serverTimestamp
@@ -228,6 +228,12 @@ function Game() {
 
   // 1. Auth
   useEffect(() => {
+    // Handle redirect result for mobile login
+    getRedirectResult(auth).catch((error) => {
+      console.error("Redirect login error:", error);
+      alert("Login failed: " + error.message);
+    });
+
     const unsubscribe = onAuthStateChanged(auth, async (u) => {
       if (!u) {
         signInAnonymously(auth);
@@ -576,6 +582,7 @@ function Game() {
       }
     } catch (error) {
       console.error("Login failed:", error);
+      alert("Login failed: " + error.message);
     }
   };
 
