@@ -1,7 +1,7 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { auth, db, storage } from '../firebase';
-import { signInAnonymously, onAuthStateChanged, GoogleAuthProvider, linkWithPopup, signInWithPopup, signOut, signInWithRedirect, getRedirectResult } from 'firebase/auth';
+import { signInAnonymously, onAuthStateChanged, GoogleAuthProvider, linkWithPopup, signInWithPopup, signOut } from 'firebase/auth';
 import {
   doc, setDoc, getDoc, onSnapshot, collection,
   addDoc, query, orderBy, deleteDoc, where, getDocs, serverTimestamp
@@ -225,45 +225,17 @@ function Game() {
   const [pendingJoinId, setPendingJoinId] = useState(null);
   const [toastMessage, setToastMessage] = useState(null);
   const [isTableClosed, setIsTableClosed] = useState(false);
-  const redirectCheckRef = useRef(false);
 
   // 1. Auth
   useEffect(() => {
-    // Handle redirect result for mobile login
-    const handleRedirect = async () => {
-      try {
-        await getRedirectResult(auth);
-      } catch (error) {
-        console.error("Redirect login error:", error);
-        if (error.code === 'auth/unauthorized-domain') {
-          alert(`Configuration Error: The domain "${window.location.hostname}" is not authorized. Add it to Firebase Console > Authentication > Settings > Authorized Domains.`);
-        } else {
-          alert("Login failed: " + error.message);
-        }
-      } finally {
-        redirectCheckRef.current = true;
-        if (!auth.currentUser) {
-          signInAnonymously(auth);
-        }
-      }
-    };
-    handleRedirect();
-
-    const unsubscribe = onAuthStateChanged(auth, async (u) => {
-      if (!u) {
-        if (redirectCheckRef.current) {
-          signInAnonymously(auth);
-        }
-      } else {
-        // If logged in via provider but name is missing, force reload to fetch profile
-        if (!u.isAnonymous && !u.displayName) {
-          await u.reload();
-          u = auth.currentUser;
-        }
+    const unsubscribe = onAuthStateChanged(auth, (u) => {
+      if (u) {
         setUser(u);
-        if (u?.displayName) {
+        if (u.displayName) {
           setPlayerName((prev) => prev || u.displayName);
         }
+      } else {
+        signInAnonymously(auth);
       }
     });
     return () => unsubscribe();
@@ -602,18 +574,10 @@ function Game() {
   const handleLogin = async () => {
     const provider = new GoogleAuthProvider();
     try {
-      if (/Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent)) {
-        await signInWithRedirect(auth, provider);
-      } else {
-        await signInWithPopup(auth, provider);
-      }
+      await signInWithPopup(auth, provider);
     } catch (error) {
       console.error("Login failed:", error);
-      if (error.code === 'auth/unauthorized-domain') {
-        alert(`Configuration Error: The domain "${window.location.hostname}" is not authorized. Add it to Firebase Console > Authentication > Settings > Authorized Domains.`);
-      } else {
-        alert("Login failed: " + error.message);
-      }
+      alert("Login failed: " + error.message);
     }
   };
 
