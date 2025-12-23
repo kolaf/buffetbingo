@@ -231,7 +231,11 @@ function Game() {
     // Handle redirect result for mobile login
     getRedirectResult(auth).catch((error) => {
       console.error("Redirect login error:", error);
-      alert("Login failed: " + error.message);
+      if (error.code === 'auth/unauthorized-domain') {
+        alert(`Configuration Error: The domain "${window.location.hostname}" is not authorized. Add it to Firebase Console > Authentication > Settings > Authorized Domains.`);
+      } else {
+        alert("Login failed: " + error.message);
+      }
     });
 
     const unsubscribe = onAuthStateChanged(auth, async (u) => {
@@ -436,10 +440,20 @@ function Game() {
       const q = query(collection(db, "tables"), where("shortCode", "==", code));
       const snap = await getDocs(q);
       
-      const activeCollision = snap.docs.some(d => {
+      let activeCollision = false;
+      const cleanupPromises = [];
+
+      snap.forEach((d) => {
         const data = d.data();
-        return data.createdAt?.toDate() > twoWeeksAgo;
+        if (data.createdAt?.toDate && data.createdAt.toDate() > twoWeeksAgo) {
+          activeCollision = true;
+        } else {
+          // Table is outside validity window. Remove short code.
+          cleanupPromises.push(setDoc(d.ref, { shortCode: null }, { merge: true }));
+        }
       });
+
+      await Promise.all(cleanupPromises);
 
       if (!activeCollision) {
         isUnique = true;
@@ -582,7 +596,11 @@ function Game() {
       }
     } catch (error) {
       console.error("Login failed:", error);
-      alert("Login failed: " + error.message);
+      if (error.code === 'auth/unauthorized-domain') {
+        alert(`Configuration Error: The domain "${window.location.hostname}" is not authorized. Add it to Firebase Console > Authentication > Settings > Authorized Domains.`);
+      } else {
+        alert("Login failed: " + error.message);
+      }
     }
   };
 
