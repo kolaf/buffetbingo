@@ -1,5 +1,7 @@
 import React, { useState } from 'react';
+import { Link } from 'react-router-dom';
 import headerImg from '../assets/header.jpg';
+import { BADGES } from '../constants/badges';
 
 const BuffetBingo = () => {
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
@@ -91,21 +93,6 @@ const BuffetBingo = () => {
 
     setMissionModal(mission);
   };
-
-  const BADGES = [
-    {icon: 'fas fa-ghost', name: 'Ghost Protocol'},
-    {icon: 'fas fa-sync', name: 'Guide-ception'},
-    {icon: 'fas fa-flask', name: 'Sauce Alchemist'},
-    {icon: 'fas fa-pepper-hot', name: 'Spicy Sneeze'},
-    {icon: 'fas fa-users', name: 'Double Mirror'},
-    {icon: 'fas fa-crown', name: 'Grandma Whisperer'},
-    {icon: 'fas fa-monument', name: 'Tower of Babel'},
-    {icon: 'fas fa-ice-cream', name: 'Dessert First'},
-    {icon: 'fas fa-exclamation-triangle', name: 'The Toddler Trap'},
-    {icon: 'fas fa-broom', name: 'Clean Sweep'},
-    {icon: 'fas fa-biohazard', name: 'Iron Stomach'},
-    {icon: 'fas fa-recycle', name: 'Finishing Move'}
-  ];
 
   const createPreGameTemplate = (e) => {
     e.preventDefault();
@@ -212,17 +199,17 @@ const BuffetBingo = () => {
         <nav className="fixed top-0 w-full z-50 bg-white/80 backdrop-blur-md border-b border-slate-200/50 transition-all duration-300">
             <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
                 <div className="flex justify-between h-16">
-                    <div className="flex items-center">
+                    <Link to="/" onClick={() => window.scrollTo({ top: 0, behavior: 'smooth' })} className="flex items-center">
                         <i className="fas fa-utensils text-rose-600 text-2xl mr-2"></i>
                         <span className="text-2xl font-bold text-gray-900 brand-font">Buffet Bingo</span>
-                    </div>
+                    </Link>
                     <div className="hidden md:flex items-center space-x-8">
                         <a href="#rules" className="nav-link text-gray-600 hover:text-rose-600 font-medium">Rules</a>
                         <a href="#scouting" className="nav-link text-gray-600 hover:text-rose-600 font-medium">Scouting</a>
                         <a href="#badges" className="nav-link text-gray-600 hover:text-rose-600 font-medium">Badges</a>
                         <a href="#ethics" className="nav-link text-gray-600 hover:text-rose-600 font-medium">Ninja Code</a>
                         <a href="#" onClick={createPreGameTemplate} className="nav-link text-gray-600 hover:text-rose-600 font-medium">Download Scorecard</a>
-                        <a href="#scorecard" className="bg-rose-600 text-white px-4 py-2 rounded-full hover:bg-rose-700 transition shadow-lg">Play Now</a>
+                        <Link to="/play" className="bg-rose-600 text-white px-4 py-2 rounded-full hover:bg-rose-700 transition shadow-lg">Play Now</Link>
                     </div>
                     <div className="md:hidden flex items-center">
                         <button 
@@ -242,7 +229,7 @@ const BuffetBingo = () => {
                 <a href="#badges" onClick={closeMenu} className="block py-2 px-4 text-sm hover:bg-gray-100">Badges</a>
                 <a href="#ethics" onClick={closeMenu} className="block py-2 px-4 text-sm hover:bg-gray-100">Ninja Code</a>
                 <a href="#" onClick={(e) => { closeMenu(); createPreGameTemplate(e); }} className="block py-2 px-4 text-sm hover:bg-gray-100">Download Scorecard</a>
-                <a href="#scorecard" onClick={closeMenu} className="block py-2 px-4 text-sm text-rose-600 font-bold hover:bg-gray-100">Play Now</a>
+                <Link to="/play" onClick={closeMenu} className="block py-2 px-4 text-sm text-rose-600 font-bold hover:bg-gray-100">Play Now</Link>
             </div>
         </nav>
 
@@ -367,7 +354,7 @@ const BuffetBingo = () => {
                 <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-6 gap-6">
                     {BADGES.map((badge, idx) => (
                         <div key={idx} className={`bg-white p-4 rounded-xl shadow-sm text-center border border-gray-100 card-hover ${badge.name === 'The Toddler Trap' ? 'border-red-200' : ''} ${badge.name === 'Finishing Move' ? 'bg-emerald-50' : ''}`}>
-                            <i className={`${badge.icon} text-2xl mb-2 ${badge.name === 'Ghost Protocol' ? 'text-slate-400' : ''} ${badge.name === 'Guide-ception' ? 'text-blue-500' : ''} ${badge.name === 'Sauce Alchemist' ? 'text-emerald-500' : ''} ${badge.name === 'Spicy Sneeze' ? 'text-red-500' : ''} ${badge.name === 'Double Mirror' ? 'text-indigo-500' : ''} ${badge.name === 'Grandma Whisperer' ? 'text-amber-500' : ''} ${badge.name === 'Tower of Babel' ? 'text-sky-600' : ''} ${badge.name === 'Dessert First' ? 'text-pink-400' : ''} ${badge.name === 'The Toddler Trap' ? 'text-red-600' : ''} ${badge.name === 'Clean Sweep' ? 'text-orange-400' : ''} ${badge.name === 'Iron Stomach' ? 'text-purple-600' : ''} ${badge.name === 'Finishing Move' ? 'text-emerald-600' : ''}`}></i>
+                            <i className={`${badge.icon} text-2xl mb-2 ${badge.color}`}></i>
                             <h4 className="font-bold text-sm">{badge.name}</h4>
                             <p className="text-[10px] text-gray-500">
                                 {badge.name === 'Ghost Protocol' && 'Never spotted by your Guide.'}

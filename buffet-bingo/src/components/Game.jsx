@@ -7,6 +7,7 @@ import {
   addDoc, query, orderBy
 } from 'firebase/firestore';
 import { ref, uploadBytes, getDownloadURL } from 'firebase/storage';
+import { BADGES } from '../constants/badges';
 
 // --- COMPONENT: Score Entry Form ---
 const ScoreForm = ({ tableId, user, onComplete, currentName }) => {
@@ -19,11 +20,39 @@ const ScoreForm = ({ tableId, user, onComplete, currentName }) => {
     regret: 1,
     waste: 1
   });
+  const [selectedBadges, setSelectedBadges] = useState([]);
 
   const handleFileChange = (e) => {
     if (e.target.files[0]) {
-      setPhoto(e.target.files[0]);
-      setPhotoPreview(URL.createObjectURL(e.target.files[0]));
+      const file = e.target.files[0];
+      const reader = new FileReader();
+      reader.onload = (event) => {
+        const img = new Image();
+        img.onload = () => {
+          const canvas = document.createElement('canvas');
+          const ctx = canvas.getContext('2d');
+          canvas.width = 300;
+          canvas.height = 300;
+          const ratio = Math.max(300 / img.width, 300 / img.height);
+          const centerShift_x = (300 - img.width * ratio) / 2;
+          const centerShift_y = (300 - img.height * ratio) / 2;
+          ctx.drawImage(img, 0, 0, img.width, img.height, centerShift_x, centerShift_y, img.width * ratio, img.height * ratio);
+          canvas.toBlob((blob) => {
+            setPhoto(blob);
+            setPhotoPreview(URL.createObjectURL(blob));
+          }, 'image/jpeg', 0.85);
+        };
+        img.src = event.target.result;
+      };
+      reader.readAsDataURL(file);
+    }
+  };
+
+  const toggleBadge = (badgeName) => {
+    if (selectedBadges.includes(badgeName)) {
+      setSelectedBadges(selectedBadges.filter(b => b !== badgeName));
+    } else {
+      setSelectedBadges([...selectedBadges, badgeName]);
     }
   };
 
@@ -48,6 +77,7 @@ const ScoreForm = ({ tableId, user, onComplete, currentName }) => {
         score: finalScore.toFixed(1),
         photoUrl: photoUrl,
         breakdown: scores,
+        badges: selectedBadges,
         submittedAt: new Date()
       });
 
@@ -82,28 +112,44 @@ const ScoreForm = ({ tableId, user, onComplete, currentName }) => {
         {/* Photo Input */}
         <div className="mb-8">
           <label className="block text-sm font-bold text-slate-700 mb-2">1. Evidence (Photo)</label>
-          <div className="relative">
-            <input 
-              type="file" 
-              accept="image/*" 
-              onChange={handleFileChange} 
-              className="hidden" 
-              id="plate-photo"
-            />
-            <label 
-              htmlFor="plate-photo" 
-              className={`flex flex-col items-center justify-center w-full h-48 border-2 border-dashed rounded-xl cursor-pointer transition-colors ${photoPreview ? 'border-rose-500 bg-rose-50' : 'border-slate-300 hover:border-rose-400 hover:bg-slate-50'}`}
-            >
-              {photoPreview ? (
-                <img src={photoPreview} alt="Preview" className="h-full w-full object-contain rounded-lg" />
-              ) : (
-                <>
-                  <i className="fas fa-cloud-upload-alt text-3xl text-slate-400 mb-2"></i>
-                  <span className="text-sm text-slate-500 font-medium">Click to upload plate photo</span>
-                </>
-              )}
-            </label>
-          </div>
+          <input 
+            type="file" 
+            accept="image/*" 
+            onChange={handleFileChange} 
+            className="hidden" 
+            id="plate-photo"
+          />
+          <input 
+            type="file" 
+            accept="image/*" 
+            capture="environment"
+            onChange={handleFileChange} 
+            className="hidden" 
+            id="plate-camera"
+          />
+
+          {photoPreview ? (
+            <div className="relative w-full h-48 border-2 border-dashed border-rose-500 bg-rose-50 rounded-xl flex items-center justify-center overflow-hidden">
+              <img src={photoPreview} alt="Preview" className="h-full w-full object-contain" />
+              <button 
+                onClick={() => { setPhoto(null); setPhotoPreview(null); }}
+                className="absolute top-2 right-2 bg-white text-rose-600 rounded-full w-8 h-8 flex items-center justify-center shadow-md hover:bg-rose-50 transition"
+              >
+                <i className="fas fa-times"></i>
+              </button>
+            </div>
+          ) : (
+            <div className="flex gap-3 h-48">
+              <label htmlFor="plate-camera" className="flex-1 flex flex-col items-center justify-center border-2 border-dashed border-slate-300 rounded-xl cursor-pointer hover:border-rose-400 hover:bg-slate-50 transition-colors">
+                <i className="fas fa-camera text-3xl text-rose-500 mb-2"></i>
+                <span className="text-sm font-bold text-slate-600">Camera</span>
+              </label>
+              <label htmlFor="plate-photo" className="flex-1 flex flex-col items-center justify-center border-2 border-dashed border-slate-300 rounded-xl cursor-pointer hover:border-rose-400 hover:bg-slate-50 transition-colors">
+                <i className="fas fa-cloud-upload-alt text-3xl text-slate-400 mb-2"></i>
+                <span className="text-sm font-bold text-slate-600">Upload</span>
+              </label>
+            </div>
+          )}
         </div>
 
         {/* Sliders */}
@@ -131,6 +177,26 @@ const ScoreForm = ({ tableId, user, onComplete, currentName }) => {
               </div>
             </div>
           ))}
+        </div>
+
+        {/* Badges Selection */}
+        <div className="mb-8">
+          <label className="block text-sm font-bold text-slate-700 mb-4">Achievements (Optional)</label>
+          <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
+            {BADGES.map((badge) => {
+              const isSelected = selectedBadges.includes(badge.name);
+              return (
+                <div 
+                  key={badge.name}
+                  onClick={() => toggleBadge(badge.name)}
+                  className={`cursor-pointer p-3 rounded-xl border transition-all flex flex-col items-center text-center ${isSelected ? 'border-rose-500 bg-rose-50 ring-2 ring-rose-200' : 'border-slate-200 hover:border-rose-300 hover:bg-slate-50'}`}
+                >
+                  <i className={`${badge.icon} text-xl mb-2 ${isSelected ? 'text-rose-600' : 'text-slate-400'}`}></i>
+                  <span className={`text-xs font-bold ${isSelected ? 'text-rose-700' : 'text-slate-600'}`}>{badge.name}</span>
+                </div>
+              );
+            })}
+          </div>
         </div>
 
         <button
@@ -161,6 +227,25 @@ function Game() {
     });
   }, []);
 
+  // 1.5 Restore Session
+  useEffect(() => {
+    const storedTableId = localStorage.getItem('buffetBingo_tableId');
+    const storedTimestamp = localStorage.getItem('buffetBingo_timestamp');
+
+    if (storedTableId && storedTimestamp) {
+      const now = new Date().getTime();
+      const joinedAt = parseInt(storedTimestamp, 10);
+      const fourHours = 4 * 60 * 60 * 1000;
+
+      if (now - joinedAt < fourHours) {
+        setTableId(storedTableId);
+      } else {
+        localStorage.removeItem('buffetBingo_tableId');
+        localStorage.removeItem('buffetBingo_timestamp');
+      }
+    }
+  }, []);
+
   // 2. Real-time Players Listener (Sub-collection)
   useEffect(() => {
     if (!tableId) return;
@@ -171,7 +256,9 @@ function Game() {
       const playerList = snapshot.docs.map(doc => ({
         uid: doc.id,
         ...doc.data()
-      }));
+      })).filter(p => p.photoUrl);
+      // Sort by score descending
+      playerList.sort((a, b) => parseFloat(b.score || 0) - parseFloat(a.score || 0));
       setPlayers(playerList);
     });
 
@@ -208,6 +295,8 @@ function Game() {
         name: user.displayName || playerName || "Host (You)", score: 0, photoUrl: null
       });
       setTableId(code);
+      localStorage.setItem('buffetBingo_tableId', code);
+      localStorage.setItem('buffetBingo_timestamp', new Date().getTime().toString());
     } catch (error) {
       console.error("Error creating table:", error);
     }
@@ -220,11 +309,30 @@ function Game() {
     const tableSnap = await getDoc(doc(db, "tables", code));
     if (tableSnap.exists()) {
       setTableId(code);
-      await setDoc(doc(db, "tables", code, "players", user.uid), {
-        name: user.displayName || playerName || "Guest Ninja", score: 0, photoUrl: null
-      });
+      localStorage.setItem('buffetBingo_tableId', code);
+      localStorage.setItem('buffetBingo_timestamp', new Date().getTime().toString());
+      const playerRef = doc(db, "tables", code, "players", user.uid);
+      const playerSnap = await getDoc(playerRef);
+
+      if (!playerSnap.exists()) {
+        await setDoc(playerRef, {
+          name: user.displayName || playerName || "Guest Ninja", score: 0, photoUrl: null
+        });
+      } else if (playerName) {
+        await setDoc(playerRef, { name: playerName }, { merge: true });
+      }
     } else {
       alert("Table not found");
+    }
+  };
+
+  const leaveTable = () => {
+    if (window.confirm("Are you sure you want to leave this table?")) {
+      setTableId("");
+      setPlayers([]);
+      setIsScoring(false);
+      localStorage.removeItem('buffetBingo_tableId');
+      localStorage.removeItem('buffetBingo_timestamp');
     }
   };
 
@@ -244,8 +352,13 @@ function Game() {
                     <span className="text-xl font-bold text-gray-900" style={{ fontFamily: "'Fredoka', sans-serif" }}>Buffet Bingo</span>
                 </Link>
                 {tableId && (
-                    <div className="bg-slate-100 px-3 py-1 rounded-full text-sm font-mono font-bold text-slate-600">
-                        Table: {tableId}
+                    <div className="flex items-center gap-3">
+                        <div className="bg-slate-100 px-3 py-1 rounded-full text-sm font-mono font-bold text-slate-600">
+                            Table: {tableId}
+                        </div>
+                        <button onClick={leaveTable} className="text-slate-400 hover:text-rose-600 transition" title="Leave Table">
+                            <i className="fas fa-sign-out-alt"></i>
+                        </button>
                     </div>
                 )}
             </div>
@@ -330,8 +443,38 @@ function Game() {
                     </div>
 
                     <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
-                        {players.map((p) => (
-                            <div key={p.uid} className="bg-white rounded-2xl shadow-sm border border-slate-100 overflow-hidden hover:shadow-md transition">
+                        {players.map((p, index) => {
+                            const scoreVal = parseFloat(p.score || 0);
+                            let cardStyle = "border-slate-100 shadow-sm";
+                            let RankBadge = null;
+
+                            if (scoreVal > 0) {
+                                if (index === 0) {
+                                    cardStyle = "border-yellow-400 ring-4 ring-yellow-50 shadow-xl transform scale-[1.02] z-10";
+                                    RankBadge = (
+                                        <div className="absolute top-0 left-0 bg-yellow-400 text-white px-3 py-1 rounded-br-xl font-bold shadow-sm z-20">
+                                            <i className="fas fa-trophy mr-1 text-yellow-100"></i> #1
+                                        </div>
+                                    );
+                                } else if (index === 1) {
+                                    cardStyle = "border-slate-300 ring-2 ring-slate-50 shadow-lg";
+                                    RankBadge = (
+                                        <div className="absolute top-0 left-0 bg-slate-400 text-white px-3 py-1 rounded-br-xl font-bold shadow-sm z-20">
+                                            <i className="fas fa-medal mr-1 text-slate-200"></i> #2
+                                        </div>
+                                    );
+                                } else if (index === 2) {
+                                    cardStyle = "border-amber-600 ring-2 ring-amber-50 shadow-lg";
+                                    RankBadge = (
+                                        <div className="absolute top-0 left-0 bg-amber-600 text-white px-3 py-1 rounded-br-xl font-bold shadow-sm z-20">
+                                            <i className="fas fa-medal mr-1 text-amber-200"></i> #3
+                                        </div>
+                                    );
+                                }
+                            }
+                            return (
+                            <div key={p.uid} className={`bg-white rounded-2xl border overflow-hidden hover:shadow-md transition relative ${cardStyle}`}>
+                                {RankBadge}
                                 <div className="h-56 bg-slate-100 relative group">
                                     {p.photoUrl ? (
                                         <img src={p.photoUrl} alt="plate" className="w-full h-full object-cover" />
@@ -372,9 +515,21 @@ function Game() {
                                             </div>
                                         </div>
                                     )}
+
+                                    {p.badges && p.badges.length > 0 && (
+                                        <div className="flex flex-wrap gap-1 mt-3 pt-3 border-t border-slate-100 justify-center">
+                                            {p.badges.map((badgeName) => {
+                                                const badge = BADGES.find(b => b.name === badgeName);
+                                                if (!badge) return null;
+                                                return (
+                                                    <span key={badgeName} title={badgeName} className={`text-xs px-2 py-1 rounded-full bg-slate-50 border border-slate-100 ${badge.color}`}><i className={badge.icon}></i></span>
+                                                );
+                                            })}
+                                        </div>
+                                    )}
                                 </div>
                             </div>
-                        ))}
+                        )})}
                     </div>
                     
                     {players.length === 0 && (
