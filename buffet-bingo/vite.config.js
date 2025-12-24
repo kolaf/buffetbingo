@@ -5,6 +5,11 @@ import tailwindcss from '@tailwindcss/vite'
 // https://vite.dev/config/
 export default defineConfig({
   plugins: [react(),tailwindcss()],
+  server: {
+    headers: {
+      "Cross-Origin-Opener-Policy": "same-origin-allow-popups",
+    },
+  },
   build: {
     // Increase the chunk size warning limit to 1MB (1000 kBs)
     chunkSizeWarningLimit: 1000,

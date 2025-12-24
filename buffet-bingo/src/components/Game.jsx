@@ -30,6 +30,8 @@ function Game() {
   const [toastMessage, setToastMessage] = useState(null);
   const [isTableClosed, setIsTableClosed] = useState(false);
   const [currentTableName, setCurrentTableName] = useState("");
+  const [migrationData, setMigrationData] = useState(null);
+  const [loginConflict, setLoginConflict] = useState(false);
 
   // 1. Auth
   useEffect(() => {
@@ -369,25 +371,13 @@ function Game() {
           }
           const plateDataToMigrate = anonPlayerSnap.data();
 
-          // alert("This Google account is already in use. We will sign you in and migrate your plate to your existing account.");
-
-          try {
-            const result = await signInWithPopup(auth, provider);
-            const persistentUser = result.user;
-            setUser(persistentUser);
-            currentUser = persistentUser;
-
-            const persistentPlayerRef = doc(db, "tables", tableId, "players", persistentUser.uid);
-            await setDoc(persistentPlayerRef, plateDataToMigrate);
-            await deleteDoc(anonPlayerRef);
-
-            // Update the local playerData object for the Hall of Fame entry
-            playerData = { ...plateDataToMigrate, uid: persistentUser.uid };
-          } catch (migrationError) {
-            console.error("Account migration failed:", migrationError);
-            alert("There was an error migrating your plate. Please try again.");
-            return;
-          }
+          // Instead of auto-triggering (which gets blocked), set state to show a modal
+          setMigrationData({
+            anonUid: anonymousUid,
+            plateData: plateDataToMigrate,
+            originalPlayerData: playerData
+          });
+          return;
         } else {
           console.error("Auth Error:", error);
           alert("Authentication failed or cancelled. Could not join Hall of Fame.");
@@ -416,6 +406,67 @@ function Game() {
     }
   };
 
+  const continueMigration = async () => {
+    if (!migrationData) return;
+    
+    const provider = new GoogleAuthProvider();
+    try {
+      const result = await signInWithPopup(auth, provider);
+      const persistentUser = result.user;
+      setUser(persistentUser);
+      
+      const { anonUid, plateData, originalPlayerData } = migrationData;
+      let updatedPlateData = { ...plateData };
+
+      // Migrate Photo (Storage)
+      if (updatedPlateData.photoUrl) {
+        try {
+          const oldStorageRef = ref(storage, `plates/${tableId}/${anonUid}.jpg`);
+          const newStorageRef = ref(storage, `plates/${tableId}/${persistentUser.uid}.jpg`);
+          
+          const response = await fetch(updatedPlateData.photoUrl);
+          const blob = await response.blob();
+          
+          await uploadBytes(newStorageRef, blob);
+          const newPhotoUrl = await getDownloadURL(newStorageRef);
+          updatedPlateData.photoUrl = newPhotoUrl;
+          
+          await deleteObject(oldStorageRef);
+        } catch (storageError) {
+          console.error("Photo migration error:", storageError);
+        }
+      }
+
+      const persistentPlayerRef = doc(db, "tables", tableId, "players", persistentUser.uid);
+      await setDoc(persistentPlayerRef, updatedPlateData);
+      await deleteDoc(doc(db, "tables", tableId, "players", anonUid));
+
+      // Migrate Table Host
+      const tableRef = doc(db, "tables", tableId);
+      const tableSnap = await getDoc(tableRef);
+      if (tableSnap.exists() && tableSnap.data().host === anonUid) {
+        await setDoc(tableRef, { host: persistentUser.uid }, { merge: true });
+      }
+
+      // Add to Hall of Fame
+      await addDoc(collection(db, "hallOfFame"), {
+        ...updatedPlateData,
+        name: persistentUser.displayName || originalPlayerData.name,
+        hallOfFameJoinedAt: new Date(),
+        userId: persistentUser.uid,
+        originTableId: tableId
+      });
+      await setDoc(doc(db, "tables", tableId, "players", persistentUser.uid), { inHallOfFame: true }, { merge: true });
+      logEvent(getAnalytics(), 'join_hall_of_fame', { table_id: tableId });
+      
+      setMigrationData(null);
+      alert("You have been immortalized in the Hall of Fame!");
+    } catch (error) {
+      console.error("Migration failed:", error);
+      alert("Migration failed: " + error.message);
+    }
+  };
+
   const handleShare = () => {
     const shareLink = `${window.location.origin}/play?join=${tableId}`;
     navigator.clipboard.writeText(shareLink).then(() => {
@@ -436,14 +487,7 @@ function Game() {
         // Success! The anonymous account is now a permanent account.
       } catch (error) {
         if (error.code === 'auth/credential-already-in-use') {
-          // This credential is in use by another account. Sign in with that account instead.
-          alert("This Google account is already linked to another user. We'll sign you in with that account instead.");
-          try {
-            await signInWithPopup(auth, provider);
-          } catch (signInError) {
-            console.error("Sign-in after link failed:", signInError);
-            alert("Could not sign in with the existing account. " + signInError.message);
-          }
+          setLoginConflict(true);
         } else {
           console.error("Login/link failed:", error);
           alert("Login failed: " + error.message);
@@ -457,6 +501,17 @@ function Game() {
         console.error("Login failed:", error);
         alert("Login failed: " + error.message);
       }
+    }
+  };
+
+  const resolveLoginConflict = async () => {
+    const provider = new GoogleAuthProvider();
+    try {
+      await signInWithPopup(auth, provider);
+      setLoginConflict(false);
+    } catch (error) {
+      console.error("Login failed:", error);
+      alert("Login failed: " + error.message);
     }
   };
 
@@ -595,6 +650,42 @@ function Game() {
                     <i className="fas fa-user-plus text-sm"></i>
                 </div>
                 <span className="font-bold">{toastMessage}</span>
+            </div>
+        )}
+
+        {migrationData && (
+            <div className="fixed inset-0 bg-black/80 flex items-center justify-center z-[100] p-4">
+                <div className="bg-white p-8 rounded-2xl text-center max-w-sm shadow-2xl">
+                    <i className="fas fa-exchange-alt text-4xl text-rose-600 mb-4"></i>
+                    <h3 className="text-xl font-bold mb-2">Account Switch Required</h3>
+                    <p className="text-gray-600 mb-6 text-sm">
+                        This Google account is already in use. Click below to sign in and move your plate to your existing account.
+                    </p>
+                    <div className="flex gap-3 justify-center">
+                        <button onClick={() => setMigrationData(null)} className="px-4 py-2 text-slate-500 font-bold hover:text-slate-700">Cancel</button>
+                        <button onClick={continueMigration} className="bg-rose-600 text-white px-6 py-2 rounded-full font-bold hover:bg-rose-700 shadow-lg">
+                            Sign In & Migrate
+                        </button>
+                    </div>
+                </div>
+            </div>
+        )}
+
+        {loginConflict && (
+            <div className="fixed inset-0 bg-black/80 flex items-center justify-center z-[100] p-4">
+                <div className="bg-white p-8 rounded-2xl text-center max-w-sm shadow-2xl">
+                    <i className="fas fa-user-lock text-4xl text-rose-600 mb-4"></i>
+                    <h3 className="text-xl font-bold mb-2">Account Exists</h3>
+                    <p className="text-gray-600 mb-6 text-sm">
+                        This Google account is already linked to another user. Sign in with that account instead?
+                    </p>
+                    <div className="flex gap-3 justify-center">
+                        <button onClick={() => setLoginConflict(false)} className="px-4 py-2 text-slate-500 font-bold hover:text-slate-700">Cancel</button>
+                        <button onClick={resolveLoginConflict} className="bg-rose-600 text-white px-6 py-2 rounded-full font-bold hover:bg-rose-700 shadow-lg">
+                            Yes, Sign In
+                        </button>
+                    </div>
+                </div>
             </div>
         )}
     </div>

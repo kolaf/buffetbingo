@@ -43,7 +43,7 @@ const JoinScreen = ({
           <i className="fas fa-dice"></i>
         </div>
         <h1 className="text-3xl font-bold text-slate-900 mb-2" style={{ fontFamily: "'Fredoka', sans-serif" }}>Start Playing</h1>
-        <p className="text-slate-500 mb-8">Start a table or join your friends.</p>
+        <p className="text-slate-500 mb-8">Join your friends or start a new table.</p>
 
         {pendingJoinId && (
           <div className="bg-rose-50 text-rose-600 px-4 py-2 rounded-lg mb-6 text-sm font-bold animate-pulse">
