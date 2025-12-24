@@ -358,9 +358,41 @@ function Game() {
         currentUser = result.user;
         setUser(currentUser);
       } catch (error) {
-        console.error("Auth Error:", error);
-        alert("Authentication failed or cancelled. Could not join Hall of Fame.");
-        return;
+        if (error.code === 'auth/credential-already-in-use') {
+          const anonymousUid = currentUser.uid;
+          const anonPlayerRef = doc(db, "tables", tableId, "players", anonymousUid);
+          const anonPlayerSnap = await getDoc(anonPlayerRef);
+
+          if (!anonPlayerSnap.exists()) {
+            alert("Could not find your original plate to migrate. Please log out and log back in from the main screen.");
+            return;
+          }
+          const plateDataToMigrate = anonPlayerSnap.data();
+
+          alert("This Google account is already in use. We will sign you in and migrate your plate to your existing account.");
+
+          try {
+            const result = await signInWithPopup(auth, provider);
+            const persistentUser = result.user;
+            setUser(persistentUser);
+            currentUser = persistentUser;
+
+            const persistentPlayerRef = doc(db, "tables", tableId, "players", persistentUser.uid);
+            await setDoc(persistentPlayerRef, plateDataToMigrate);
+            await deleteDoc(anonPlayerRef);
+
+            // Update the local playerData object for the Hall of Fame entry
+            playerData = { ...plateDataToMigrate, uid: persistentUser.uid };
+          } catch (migrationError) {
+            console.error("Account migration failed:", migrationError);
+            alert("There was an error migrating your plate. Please try again.");
+            return;
+          }
+        } else {
+          console.error("Auth Error:", error);
+          alert("Authentication failed or cancelled. Could not join Hall of Fame.");
+          return;
+        }
       }
     }
 
@@ -395,11 +427,36 @@ function Game() {
 
   const handleLogin = async () => {
     const provider = new GoogleAuthProvider();
-    try {
-      await signInWithPopup(auth, provider);
-    } catch (error) {
-      console.error("Login failed:", error);
-      alert("Login failed: " + error.message);
+    const currentUser = auth.currentUser;
+
+    if (currentUser && currentUser.isAnonymous) {
+      // Current user is anonymous, try to link the Google account.
+      try {
+        await linkWithPopup(currentUser, provider);
+        // Success! The anonymous account is now a permanent account.
+      } catch (error) {
+        if (error.code === 'auth/credential-already-in-use') {
+          // This credential is in use by another account. Sign in with that account instead.
+          alert("This Google account is already linked to another user. We'll sign you in with that account instead.");
+          try {
+            await signInWithPopup(auth, provider);
+          } catch (signInError) {
+            console.error("Sign-in after link failed:", signInError);
+            alert("Could not sign in with the existing account. " + signInError.message);
+          }
+        } else {
+          console.error("Login/link failed:", error);
+          alert("Login failed: " + error.message);
+        }
+      }
+    } else {
+      // No user or user is not anonymous, just do a normal sign-in.
+      try {
+        await signInWithPopup(auth, provider);
+      } catch (error) {
+        console.error("Login failed:", error);
+        alert("Login failed: " + error.message);
+      }
     }
   };
 
