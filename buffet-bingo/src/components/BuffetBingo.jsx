@@ -1,6 +1,14 @@
 import React, { useState } from 'react';
 import { Link } from 'react-router-dom';
 import headerImg from '../assets/header.jpg';
+import grandmaImg from '../assets/archetypes/grandma.jpg';
+import structuralImg from '../assets/archetypes/structural_engineer.jpg';
+import sauceImg from '../assets/archetypes/sauce_scientist.jpg';
+import proteinImg from '../assets/archetypes/protein_purist.jpg';
+import cleanerImg from '../assets/archetypes/plate_cleaner.jpg';
+import vacationerImg from '../assets/archetypes/vacationer.jpg';
+import scannerImg from '../assets/archetypes/scanner.jpg';
+import toddlerImg from '../assets/archetypes/toddler.jpg';
 import { BADGES } from '../constants/badges';
 
 const BuffetBingo = () => {
@@ -189,6 +197,66 @@ const BuffetBingo = () => {
     setTimeout(() => w.print(), 500);
   };
 
+  const archetypesList = [
+    {
+      name: "The Grandma",
+      desc: "She knows exactly which casserole is homemade and which came from a bag. Follow her for comfort food, but be prepared to eat dinner at 4:30 PM. If she takes the green Jell-O, you take the green Jell-O.",
+      img: grandmaImg,
+      titleColor: "text-rose-400",
+      borderColor: "hover:border-rose-500"
+    },
+    {
+      name: "The Structural Engineer",
+      desc: "Masters of gravity who treat the salad bar like a high-stakes game of Tetris. Expect a precarious tower of onion rings balanced on a load-bearing slice of ham. Do not sneeze near their plate.",
+      img: structuralImg,
+      titleColor: "text-blue-400",
+      borderColor: "hover:border-blue-500"
+    },
+    {
+      name: "The Sauce Scientist",
+      desc: "They aren't here for food; they are conducting chemistry experiments with ranch and sriracha. You will be dipping pizza into a mixture that looks like radioactive sludge. Hope you brought your safety goggles.",
+      img: sauceImg,
+      titleColor: "text-amber-500",
+      borderColor: "hover:border-amber-500"
+    },
+    {
+      name: "The Protein Purist",
+      desc: "Vegetables are a myth to this carnivore. They will bankrupt the restaurant with a mountain of crab legs and prime rib. Your sodium levels will be critical, but your ROI will be legendary.",
+      img: proteinImg,
+      titleColor: "text-emerald-500",
+      borderColor: "hover:border-emerald-500"
+    },
+    {
+      name: "The Plate-Cleaner",
+      desc: "They take three peas and a crouton, eat them, and immediately return to the line. You will walk a marathon tonight just trying to keep up. Cardio is unfortunately included in the price.",
+      img: cleanerImg,
+      titleColor: "text-purple-500",
+      borderColor: "hover:border-purple-500"
+    },
+    {
+      name: "The Vacationer",
+      desc: "A plate of pure anarchy where sushi touches lasagna next to a waffle. They have no plan, no boundaries, and absolutely no fear of food poisoning. Tastes like expensive confusion.",
+      img: vacationerImg,
+      titleColor: "text-orange-500",
+      borderColor: "hover:border-orange-500"
+    },
+    {
+      name: "The Scanner",
+      desc: "They circle the buffet perimeter three times like a shark before picking up a single plate. You will starve while they analyze the moisture content of the mac and cheese. Patience is your only utensil.",
+      img: scannerImg,
+      titleColor: "text-sky-500",
+      borderColor: "hover:border-sky-500"
+    },
+    {
+      name: "The Toddler",
+      desc: "The most dangerous game. You will end up with one chicken nugget, a lemon wedge, and a handful of crackers. Do not follow unless you want to leave hungry and confused.",
+      img: toddlerImg,
+      titleColor: "text-red-600",
+      borderColor: "hover:border-red-600",
+      descClass: "text-red-400 font-bold"
+    }
+  ];
+
   return (
     <div className="text-gray-800 font-sans bg-slate-50">
         {/* External Dependencies (Ensure these are loaded in your index.html or via Helmet) */}
@@ -316,38 +384,15 @@ const BuffetBingo = () => {
                     <h2 className="text-4xl font-bold mt-2">Guide Archetypes</h2>
                 </div>
                 <div className="grid md:grid-cols-3 lg:grid-cols-4 gap-6">
-                    <div className="bg-slate-800 p-6 rounded-xl border border-slate-700 hover:border-rose-500 transition">
-                        <h3 className="text-lg font-bold text-rose-400 mb-2">The Grandma</h3>
-                        <p className="text-xs text-slate-300">She knows exactly which casserole is homemade and which came from a bag. Follow her for comfort food, but be prepared to eat dinner at 4:30 PM. If she takes the green Jell-O, you take the green Jell-O.</p>
-                    </div>
-                    <div className="bg-slate-800 p-6 rounded-xl border border-slate-700 hover:border-blue-500 transition">
-                        <h3 className="text-lg font-bold text-blue-400 mb-2">The Structural Engineer</h3>
-                        <p className="text-xs text-slate-300">Masters of gravity who treat the salad bar like a high-stakes game of Tetris. Expect a precarious tower of onion rings balanced on a load-bearing slice of ham. Do not sneeze near their plate.</p>
-                    </div>
-                    <div className="bg-slate-800 p-6 rounded-xl border border-slate-700 hover:border-amber-500 transition">
-                        <h3 className="text-lg font-bold text-amber-500 mb-2">The Sauce Scientist</h3>
-                        <p className="text-xs text-slate-300">They aren't here for food; they are conducting chemistry experiments with ranch and sriracha. You will be dipping pizza into a mixture that looks like radioactive sludge. Hope you brought your safety goggles.</p>
-                    </div>
-                    <div className="bg-slate-800 p-6 rounded-xl border border-slate-700 hover:border-emerald-500 transition">
-                        <h3 className="text-lg font-bold text-emerald-500 mb-2">The Protein Purist</h3>
-                        <p className="text-xs text-slate-300">Vegetables are a myth to this carnivore. They will bankrupt the restaurant with a mountain of crab legs and prime rib. Your sodium levels will be critical, but your ROI will be legendary.</p>
-                    </div>
-                    <div className="bg-slate-800 p-6 rounded-xl border border-slate-700 hover:border-purple-500 transition">
-                        <h3 className="text-lg font-bold text-purple-500 mb-2">The Plate-Cleaner</h3>
-                        <p className="text-xs text-slate-300">They take three peas and a crouton, eat them, and immediately return to the line. You will walk a marathon tonight just trying to keep up. Cardio is unfortunately included in the price.</p>
-                    </div>
-                    <div className="bg-slate-800 p-6 rounded-xl border border-slate-700 hover:border-orange-500 transition">
-                        <h3 className="text-lg font-bold text-orange-500 mb-2">The Vacationer</h3>
-                        <p className="text-xs text-slate-300">A plate of pure anarchy where sushi touches lasagna next to a waffle. They have no plan, no boundaries, and absolutely no fear of food poisoning. Tastes like expensive confusion.</p>
-                    </div>
-                    <div className="bg-slate-800 p-6 rounded-xl border border-slate-700 hover:border-sky-500 transition">
-                        <h3 className="text-lg font-bold text-sky-500 mb-2">The Scanner</h3>
-                        <p className="text-xs text-slate-300">They circle the buffet perimeter three times like a shark before picking up a single plate. You will starve while they analyze the moisture content of the mac and cheese. Patience is your only utensil.</p>
-                    </div>
-                    <div className="bg-slate-800 p-6 rounded-xl border border-slate-700 hover:border-red-600 transition">
-                        <h3 className="text-lg font-bold text-red-600 mb-2">The Toddler</h3>
-                        <p className="text-xs text-red-400 font-bold">The most dangerous game. You will end up with one chicken nugget, a lemon wedge, and a handful of crackers. Do not follow unless you want to leave hungry and confused.</p>
-                    </div>
+                    {archetypesList.map((archetype, idx) => (
+                        <div key={idx} className={`bg-slate-800 p-6 rounded-xl border border-slate-700 ${archetype.borderColor} transition flex flex-col`}>
+                            <div className="h-40 mb-4 overflow-hidden rounded-lg bg-slate-700">
+                                <img src={archetype.img} alt={archetype.name} className="w-full h-full object-cover hover:scale-110 transition duration-500" />
+                            </div>
+                            <h3 className={`text-lg font-bold ${archetype.titleColor} mb-2`}>{archetype.name}</h3>
+                            <p className={`text-xs ${archetype.descClass || 'text-slate-300'}`}>{archetype.desc}</p>
+                        </div>
+                    ))}
                 </div>
             </div>
         </section>
