@@ -64,6 +64,19 @@ To build the app for production to the `build` folder:
 ```sh
 npm run build
 ```
+## Firebase Storage CORS Configuration
+
+To allow the application to manipulate images (like migrating data between accounts), you must configure CORS for your Firebase Storage bucket.
+
+1. Ensure you have the Google Cloud SDK installed (which includes gsutil).
+2. Locate the storage.cors.json file in the root of the project.
+3. Run the following command, replacing <your-storage-bucket> with your actual bucket name (e.g., gs://your-project.appspot.com):
+
+```sh
+gsutil cors set storage.cors.json gs://<your-storage-bucket>
+```
+
+You can find your bucket URL in the Firebase Console under Storage.
 
 ## Contributing
 

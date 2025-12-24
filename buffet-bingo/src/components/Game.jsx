@@ -177,11 +177,28 @@ function Game() {
 
     // Listen to the 'players' sub-collection inside the table
     const playersRef = collection(db, "tables", tableId, "players");
+    let playerList = [];
     const unsubscribe = onSnapshot(playersRef, (snapshot) => {
-      const playerList = snapshot.docs.map(doc => ({
+      playerList = snapshot.docs.map(doc => ({
         uid: doc.id,
         ...doc.data()
       }));
+
+      // Deduplication: If current user has a plate, hide any "ghost" plates from previous anonymous session
+      // that match the exact submission time and score.
+      if (auth.currentUser) {
+        const myPlate = playerList.find(p => p.uid === auth.currentUser.uid);
+        if (myPlate && myPlate.submittedAt) {
+          playerList = playerList.filter(p => {
+            if (p.uid === auth.currentUser.uid) return true;
+            const isDuplicate = p.submittedAt && 
+                              p.submittedAt.seconds === myPlate.submittedAt.seconds &&
+                              p.score === myPlate.score;
+            return !isDuplicate;
+          });
+        }
+      }
+
       // Sort by score descending
       playerList.sort((a, b) => parseFloat(b.score || 0) - parseFloat(a.score || 0));
       setPlayers(playerList);
@@ -201,7 +218,7 @@ function Game() {
     });
 
     return unsubscribe;
-  }, [tableId]);
+  }, [tableId, user]);
 
   // 2.5 Fetch Host ID
   useEffect(() => {
@@ -421,31 +438,47 @@ function Game() {
       // Migrate Photo (Storage)
       if (updatedPlateData.photoUrl) {
         try {
-          const oldStorageRef = ref(storage, `plates/${tableId}/${anonUid}.jpg`);
-          const newStorageRef = ref(storage, `plates/${tableId}/${persistentUser.uid}.jpg`);
-          
           const response = await fetch(updatedPlateData.photoUrl);
-          const blob = await response.blob();
-          
-          await uploadBytes(newStorageRef, blob);
-          const newPhotoUrl = await getDownloadURL(newStorageRef);
-          updatedPlateData.photoUrl = newPhotoUrl;
-          
-          await deleteObject(oldStorageRef);
+          if (response.ok) {
+            const blob = await response.blob();
+            const newStorageRef = ref(storage, `plates/${tableId}/${persistentUser.uid}.jpg`);
+            
+            await uploadBytes(newStorageRef, blob);
+            const newPhotoUrl = await getDownloadURL(newStorageRef);
+            updatedPlateData.photoUrl = newPhotoUrl;
+            
+            // Try to delete old photo, but don't fail migration if permissions deny it
+            try {
+              const oldStorageRef = ref(storage, `plates/${tableId}/${anonUid}.jpg`);
+              await deleteObject(oldStorageRef);
+            } catch (delErr) {
+              console.warn("Could not delete old photo (likely permissions):", delErr);
+            }
+          }
         } catch (storageError) {
-          console.error("Photo migration error:", storageError);
+          console.error("Photo migration error (continuing):", storageError);
         }
       }
 
       const persistentPlayerRef = doc(db, "tables", tableId, "players", persistentUser.uid);
       await setDoc(persistentPlayerRef, updatedPlateData);
-      await deleteDoc(doc(db, "tables", tableId, "players", anonUid));
+      
+      // Try to delete old doc, but don't fail if permissions deny it
+      try {
+        await deleteDoc(doc(db, "tables", tableId, "players", anonUid));
+      } catch (docDelErr) {
+        console.warn("Could not delete old player doc (likely permissions):", docDelErr);
+      }
 
       // Migrate Table Host
-      const tableRef = doc(db, "tables", tableId);
-      const tableSnap = await getDoc(tableRef);
-      if (tableSnap.exists() && tableSnap.data().host === anonUid) {
-        await setDoc(tableRef, { host: persistentUser.uid }, { merge: true });
+      try {
+        const tableRef = doc(db, "tables", tableId);
+        const tableSnap = await getDoc(tableRef);
+        if (tableSnap.exists() && tableSnap.data().host === anonUid) {
+          await setDoc(tableRef, { host: persistentUser.uid }, { merge: true });
+        }
+      } catch (hostErr) {
+        console.warn("Could not migrate host:", hostErr);
       }
 
       // Add to Hall of Fame
