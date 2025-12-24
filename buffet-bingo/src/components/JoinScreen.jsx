@@ -22,9 +22,14 @@ const JoinScreen = ({
       <div className="bg-white p-8 rounded-3xl shadow-xl border border-slate-100 text-center relative">
         <div className="absolute top-4 right-4">
           {user?.isAnonymous ? (
-            <button onClick={handleLogin} className="text-xs font-bold text-rose-600 hover:text-rose-700">
-              <i className="fas fa-sign-in-alt mr-1"></i> Login
-            </button>
+            <div className="flex flex-col items-end">
+              <button onClick={handleLogin} className="text-xs font-bold text-rose-600 hover:text-rose-700">
+                <i className="fas fa-sign-in-alt mr-1"></i> Login
+              </button>
+              <span className="text-[10px] text-slate-400 mt-1 max-w-[140px] text-right leading-tight">
+                Login optional. Saves tables beyond this session.
+              </span>
+            </div>
           ) : (
             <div className="flex flex-col items-end">
               <span className="text-xs font-bold text-slate-700 mb-1">{user?.email}</span>
