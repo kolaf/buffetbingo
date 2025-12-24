@@ -20,6 +20,7 @@ function Game() {
   const [isScoring, setIsScoring] = useState(false);
   const [shortCode, setShortCode] = useState("");
   const [playerName, setPlayerName] = useState(() => localStorage.getItem('buffetBingo_playerName') || "");
+  const [tableName, setTableName] = useState("");
   const [joinCode, setJoinCode] = useState("");
   const [hostId, setHostId] = useState(null);
   const [myTables, setMyTables] = useState([]);
@@ -103,7 +104,15 @@ function Game() {
     if (user && !user.isAnonymous) {
       const q = query(collection(db, "tables"), where("host", "==", user.uid), orderBy("createdAt", "desc"));
       const unsubscribe = onSnapshot(q, (snapshot) => {
-        setMyTables(snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() })));
+        const now = Date.now();
+        const twoWeeks = 12096e5;
+        const tables = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }))
+          .filter(t => {
+            const createdAt = t.createdAt?.seconds ? t.createdAt.seconds * 1000 : 0;
+            const isRecent = (now - createdAt) < twoWeeks;
+            return t.name || (t.shortCode && isRecent);
+          });
+        setMyTables(tables);
       });
       return unsubscribe;
     } else {
@@ -255,7 +264,8 @@ function Game() {
       await setDoc(doc(db, "tables", guid), { 
         host: user.uid, 
         createdAt: serverTimestamp(),
-        shortCode: code
+        shortCode: code,
+        name: tableName.trim() || null
       });
 
       // Add self to sub-collection
@@ -265,6 +275,7 @@ function Game() {
       setTableId(guid);
       localStorage.setItem('buffetBingo_tableId', guid);
       localStorage.setItem('buffetBingo_timestamp', new Date().getTime().toString());
+      setTableName("");
     } catch (error) {
       console.error("Error creating table:", error);
     }
@@ -475,6 +486,8 @@ function Game() {
                     user={user}
                     playerName={playerName}
                     setPlayerName={setPlayerName}
+                    tableName={tableName}
+                    setTableName={setTableName}
                     joinCode={joinCode}
                     setJoinCode={setJoinCode}
                     pendingJoinId={pendingJoinId}

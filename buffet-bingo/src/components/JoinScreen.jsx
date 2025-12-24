@@ -4,6 +4,8 @@ const JoinScreen = ({
   user,
   playerName,
   setPlayerName,
+  tableName,
+  setTableName,
   joinCode,
   setJoinCode,
   pendingJoinId,
@@ -78,6 +80,16 @@ const JoinScreen = ({
           <div className="relative flex justify-center text-sm"><span className="px-2 bg-white text-slate-400">OR CREATE NEW</span></div>
         </div>
 
+        <div className="mb-4 text-left">
+          <label className="block text-xs font-bold text-slate-500 uppercase mb-1 ml-1">Table Name <span className="text-slate-300 font-normal">(Optional)</span></label>
+          <input
+            placeholder="e.g. Sunday Brunch"
+            value={tableName}
+            onChange={(e) => setTableName(e.target.value)}
+            className="w-full p-4 border border-slate-200 rounded-xl bg-slate-50 focus:ring-2 focus:ring-rose-500 outline-none transition"
+          />
+        </div>
+
         <button
           onClick={createTable}
           disabled={!user || !playerName.trim()}
@@ -93,7 +105,7 @@ const JoinScreen = ({
               {myTables.map(t => (
                 <div key={t.id} onClick={() => onSelectTable(t.id)} className="flex justify-between items-center p-3 bg-slate-50 rounded-xl hover:bg-rose-50 cursor-pointer transition group">
                   <div className="text-left">
-                    <div className="font-mono font-bold text-slate-700">{t.shortCode || t.id}</div>
+                    <div className="font-mono font-bold text-slate-700">{t.name || t.shortCode || t.id}</div>
                     <div className="text-xs text-slate-400">{t.createdAt?.seconds ? new Date(t.createdAt.seconds * 1000).toLocaleDateString() : 'Unknown date'}</div>
                   </div>
                   <button
