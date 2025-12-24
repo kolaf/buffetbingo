@@ -76,7 +76,7 @@ const HallOfFame = () => {
             <span className="text-xl font-bold text-white" style={{ fontFamily: "'Fredoka', sans-serif" }}>Buffet Bingo</span>
           </Link>
           <Link to="/play" className="bg-rose-600 text-white px-4 py-2 rounded-full text-sm font-bold hover:bg-rose-700 transition">
-            Play Now
+            Grab a plate
           </Link>
         </div>
       </nav>

@@ -278,7 +278,7 @@ const BuffetBingo = () => {
                         <a href="#badges" className="nav-link text-gray-600 hover:text-rose-600 font-medium">Badges</a>
                         <a href="#ethics" className="nav-link text-gray-600 hover:text-rose-600 font-medium">Ninja Code</a>
                         <a href="#" onClick={createPreGameTemplate} className="nav-link text-gray-600 hover:text-rose-600 font-medium">Download Scorecard</a>
-                        <Link to="/play" className="bg-rose-600 text-white px-4 py-2 rounded-full hover:bg-rose-700 transition shadow-lg">Play Now</Link>
+                        <Link to="/play" className="bg-rose-600 text-white px-4 py-2 rounded-full hover:bg-rose-700 transition shadow-lg">Grab a Plate</Link>
                     </div>
                     <div className="md:hidden flex items-center">
                         <button 
@@ -299,7 +299,7 @@ const BuffetBingo = () => {
                 <a href="#badges" onClick={closeMenu} className="block py-2 px-4 text-sm hover:bg-gray-100">Badges</a>
                 <a href="#ethics" onClick={closeMenu} className="block py-2 px-4 text-sm hover:bg-gray-100">Ninja Code</a>
                 <a href="#" onClick={(e) => { closeMenu(); createPreGameTemplate(e); }} className="block py-2 px-4 text-sm hover:bg-gray-100">Download Scorecard</a>
-                <Link to="/play" onClick={closeMenu} className="block py-2 px-4 text-sm text-rose-600 font-bold hover:bg-gray-100">Play Now</Link>
+                <Link to="/play" onClick={closeMenu} className="block py-2 px-4 text-sm text-rose-600 font-bold hover:bg-gray-100">Grab a Plate</Link>
             </div>
         </nav>
 
@@ -316,7 +316,7 @@ const BuffetBingo = () => {
                 <div className="flex flex-col sm:flex-row justify-center gap-4">
                     <a href="#rules" className="bg-white text-rose-600 px-8 py-3 rounded-full font-bold text-lg hover:bg-gray-100 transition shadow-lg">Read the Rules</a>
                     <Link to="/play" className="bg-rose-600 text-white px-8 py-3 rounded-full font-bold text-lg hover:bg-rose-700 transition shadow-lg">
-                        Play Now
+                        Grab a Plate
                     </Link>
                     <button onClick={generateBingoCard} className="border-2 border-rose-600 text-rose-600 bg-white px-8 py-3 rounded-full font-bold text-lg hover:bg-rose-50 hover:text-rose-700 transition shadow-lg">
                         <i className="fas fa-dice mr-2"></i> Random Challenge

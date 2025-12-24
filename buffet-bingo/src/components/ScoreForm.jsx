@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { db, storage } from '../firebase';
 import { doc, setDoc } from 'firebase/firestore';
 import { ref, uploadBytes, getDownloadURL } from 'firebase/storage';
+import { getAnalytics, logEvent } from "firebase/analytics";
 import { BADGES } from '../constants/badges';
 
 const ScoreForm = ({ tableId, user, onComplete, currentName }) => {
@@ -73,6 +74,11 @@ const ScoreForm = ({ tableId, user, onComplete, currentName }) => {
         breakdown: scores,
         badges: selectedBadges,
         submittedAt: new Date()
+      });
+
+      logEvent(getAnalytics(), 'submit_score', { 
+        table_id: tableId, 
+        score: finalScore 
       });
 
       onComplete();

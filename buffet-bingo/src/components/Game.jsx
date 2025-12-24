@@ -7,6 +7,7 @@ import {
   addDoc, query, orderBy, deleteDoc, where, getDocs, serverTimestamp
 } from 'firebase/firestore';
 import { ref, uploadBytes, getDownloadURL, deleteObject } from 'firebase/storage';
+import { getAnalytics, logEvent } from "firebase/analytics";
 
 import ScoreForm from './ScoreForm';
 import JoinScreen from './JoinScreen';
@@ -279,6 +280,8 @@ function Game() {
       localStorage.setItem('buffetBingo_tableId', guid);
       localStorage.setItem('buffetBingo_timestamp', new Date().getTime().toString());
       setTableName("");
+
+      logEvent(getAnalytics(), 'create_table', { table_id: guid });
     } catch (error) {
       console.error("Error creating table:", error);
     }
@@ -315,6 +318,7 @@ function Game() {
       const targetId = targetTable.id;
 
       await performJoin(targetId);
+      logEvent(getAnalytics(), 'join_table', { table_id: targetId, method: 'code' });
     } else {
       alert("Table not found");
     }
@@ -372,6 +376,7 @@ function Game() {
         originTableId: tableId
       });
       await setDoc(doc(db, "tables", tableId, "players", currentUser.uid), { inHallOfFame: true }, { merge: true });
+      logEvent(getAnalytics(), 'join_hall_of_fame', { table_id: tableId });
       alert("You have been immortalized in the Hall of Fame!");
     } catch (error) {
       console.error("Error adding to Hall of Fame:", error);
@@ -385,6 +390,7 @@ function Game() {
       setCopied(true);
       setTimeout(() => setCopied(false), 2000);
     });
+    logEvent(getAnalytics(), 'share_table', { table_id: tableId });
   };
 
   const handleLogin = async () => {
