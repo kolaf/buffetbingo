@@ -2,7 +2,6 @@ import React, { useState } from 'react';
 import { db, storage } from '../firebase';
 import { doc, setDoc } from 'firebase/firestore';
 import { ref, uploadBytes, getDownloadURL } from 'firebase/storage';
-import { getAnalytics, logEvent } from "firebase/analytics";
 import { BADGES } from '../constants/badges';
 
 const ScoreForm = ({ tableId, user, onComplete, currentName }) => {
@@ -57,10 +56,10 @@ const ScoreForm = ({ tableId, user, onComplete, currentName }) => {
 
     try {
       const finalScore = (
-        parseInt(scores.taste) +
-        parseInt(scores.cohesion) +
-        (11 - parseInt(scores.regret)) +
-        (11 - parseInt(scores.waste))
+        scores.taste +
+        scores.cohesion +
+        (11 - scores.regret) +
+        (11 - scores.waste)
       ) / 4;
 
       const storageRef = ref(storage, `plates/${tableId}/${user.uid}.jpg`);
@@ -74,11 +73,6 @@ const ScoreForm = ({ tableId, user, onComplete, currentName }) => {
         breakdown: scores,
         badges: selectedBadges,
         submittedAt: new Date()
-      });
-
-      logEvent(getAnalytics(), 'submit_score', { 
-        table_id: tableId, 
-        score: finalScore 
       });
 
       onComplete();
@@ -168,7 +162,7 @@ const ScoreForm = ({ tableId, user, onComplete, currentName }) => {
               <input
                 type="range" min="1" max="10"
                 value={scores[metric.id]}
-                onChange={(e) => setScores({ ...scores, [metric.id]: e.target.value })}
+                onChange={(e) => setScores({ ...scores, [metric.id]: e.target.valueAsNumber })}
                 className="w-full h-2 bg-slate-200 rounded-lg appearance-none cursor-pointer accent-rose-600"
               />
               <div className="flex justify-between text-xs text-slate-400 mt-1">

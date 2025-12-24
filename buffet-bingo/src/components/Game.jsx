@@ -13,6 +13,8 @@ import ScoreForm from './ScoreForm';
 import JoinScreen from './JoinScreen';
 import Scoreboard from './Scoreboard';
 
+const TABLE_EXPIRY_MS = 14 * 24 * 60 * 60 * 1000; // 2 weeks
+
 // --- MAIN APP ---
 function Game() {
   const [user, setUser] = useState(null);
@@ -30,8 +32,6 @@ function Game() {
   const [toastMessage, setToastMessage] = useState(null);
   const [isTableClosed, setIsTableClosed] = useState(false);
   const [currentTableName, setCurrentTableName] = useState("");
-  const [migrationData, setMigrationData] = useState(null);
-  const [loginConflict, setLoginConflict] = useState(false);
 
   // 1. Auth
   useEffect(() => {
@@ -109,11 +109,10 @@ function Game() {
       const q = query(collection(db, "tables"), where("host", "==", user.uid), orderBy("createdAt", "desc"));
       const unsubscribe = onSnapshot(q, (snapshot) => {
         const now = Date.now();
-        const twoWeeks = 12096e5;
         const tables = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }))
           .filter(t => {
             const createdAt = t.createdAt?.seconds ? t.createdAt.seconds * 1000 : 0;
-            const isRecent = (now - createdAt) < twoWeeks;
+            const isRecent = (now - createdAt) < TABLE_EXPIRY_MS;
             return t.name || (t.shortCode && isRecent);
           });
         setMyTables(tables);
@@ -177,28 +176,11 @@ function Game() {
 
     // Listen to the 'players' sub-collection inside the table
     const playersRef = collection(db, "tables", tableId, "players");
-    let playerList = [];
     const unsubscribe = onSnapshot(playersRef, (snapshot) => {
-      playerList = snapshot.docs.map(doc => ({
+      const playerList = snapshot.docs.map(doc => ({
         uid: doc.id,
         ...doc.data()
       }));
-
-      // Deduplication: If current user has a plate, hide any "ghost" plates from previous anonymous session
-      // that match the exact submission time and score.
-      if (auth.currentUser) {
-        const myPlate = playerList.find(p => p.uid === auth.currentUser.uid);
-        if (myPlate && myPlate.submittedAt) {
-          playerList = playerList.filter(p => {
-            if (p.uid === auth.currentUser.uid) return true;
-            const isDuplicate = p.submittedAt && 
-                              p.submittedAt.seconds === myPlate.submittedAt.seconds &&
-                              p.score === myPlate.score;
-            return !isDuplicate;
-          });
-        }
-      }
-
       // Sort by score descending
       playerList.sort((a, b) => parseFloat(b.score || 0) - parseFloat(a.score || 0));
       setPlayers(playerList);
@@ -218,7 +200,7 @@ function Game() {
     });
 
     return unsubscribe;
-  }, [tableId, user]);
+  }, [tableId]);
 
   // 2.5 Fetch Host ID
   useEffect(() => {
@@ -246,12 +228,12 @@ function Game() {
     if (!user) return alert("Please wait for login to complete.");
     
     // Generate GUID for the table
-    const guid = crypto.randomUUID ? crypto.randomUUID() : Date.now().toString(36) + Math.random().toString(36).substr(2);
+    const guid = (typeof crypto !== 'undefined' && crypto.randomUUID) ? crypto.randomUUID() : Date.now().toString(36) + Math.random().toString(36).substr(2);
     
     // Generate a unique 4-letter short code
     let code = "";
     let isUnique = false;
-    const twoWeeksAgo = new Date(Date.now() - 12096e5);
+    const expiryDate = new Date(Date.now() - TABLE_EXPIRY_MS);
 
     for (let i = 0; i < 20; i++) {
       code = Math.random().toString(36).substring(2, 6).toUpperCase();
@@ -264,7 +246,7 @@ function Game() {
 
       snap.forEach((d) => {
         const data = d.data();
-        if (data.createdAt?.toDate && data.createdAt.toDate() > twoWeeksAgo) {
+        if (data.createdAt?.toDate && data.createdAt.toDate() > expiryDate) {
           activeCollision = true;
         } else {
           // Table is outside validity window. Remove short code.
@@ -319,14 +301,14 @@ function Game() {
     const code = joinCode.toUpperCase();
     
     // Find table by shortCode, prioritizing recent ones
-    const twoWeeksAgo = new Date(Date.now() - 12096e5);
+    const expiryDate = new Date(Date.now() - TABLE_EXPIRY_MS);
     const q = query(collection(db, "tables"), where("shortCode", "==", code));
     const snap = await getDocs(q);
 
     // Filter for active tables (created < 2 weeks ago)
     const activeTables = snap.docs.filter(d => {
       const data = d.data();
-      return data.createdAt?.toDate() > twoWeeksAgo;
+      return data.createdAt?.toDate && data.createdAt.toDate() > expiryDate;
     });
 
     // Sort by creation date descending (newest first)
@@ -378,23 +360,15 @@ function Game() {
         setUser(currentUser);
       } catch (error) {
         if (error.code === 'auth/credential-already-in-use') {
-          const anonymousUid = currentUser.uid;
-          const anonPlayerRef = doc(db, "tables", tableId, "players", anonymousUid);
-          const anonPlayerSnap = await getDoc(anonPlayerRef);
-
-          if (!anonPlayerSnap.exists()) {
-            alert("Could not find your original plate to migrate. Please log out and log back in from the main screen.");
+          try {
+            const result = await signInWithPopup(auth, provider);
+            currentUser = result.user;
+            setUser(currentUser);
+          } catch (loginError) {
+            console.error("Login failed:", loginError);
+            alert("Login failed. Could not join Hall of Fame.");
             return;
           }
-          const plateDataToMigrate = anonPlayerSnap.data();
-
-          // Instead of auto-triggering (which gets blocked), set state to show a modal
-          setMigrationData({
-            anonUid: anonymousUid,
-            plateData: plateDataToMigrate,
-            originalPlayerData: playerData
-          });
-          return;
         } else {
           console.error("Auth Error:", error);
           alert("Authentication failed or cancelled. Could not join Hall of Fame.");
@@ -423,83 +397,6 @@ function Game() {
     }
   };
 
-  const continueMigration = async () => {
-    if (!migrationData) return;
-    
-    const provider = new GoogleAuthProvider();
-    try {
-      const result = await signInWithPopup(auth, provider);
-      const persistentUser = result.user;
-      setUser(persistentUser);
-      
-      const { anonUid, plateData, originalPlayerData } = migrationData;
-      let updatedPlateData = { ...plateData };
-
-      // Migrate Photo (Storage)
-      if (updatedPlateData.photoUrl) {
-        try {
-          const response = await fetch(updatedPlateData.photoUrl);
-          if (response.ok) {
-            const blob = await response.blob();
-            const newStorageRef = ref(storage, `plates/${tableId}/${persistentUser.uid}.jpg`);
-            
-            await uploadBytes(newStorageRef, blob);
-            const newPhotoUrl = await getDownloadURL(newStorageRef);
-            updatedPlateData.photoUrl = newPhotoUrl;
-            
-            // Try to delete old photo, but don't fail migration if permissions deny it
-            try {
-              const oldStorageRef = ref(storage, `plates/${tableId}/${anonUid}.jpg`);
-              await deleteObject(oldStorageRef);
-            } catch (delErr) {
-              console.warn("Could not delete old photo (likely permissions):", delErr);
-            }
-          }
-        } catch (storageError) {
-          console.error("Photo migration error (continuing):", storageError);
-        }
-      }
-
-      const persistentPlayerRef = doc(db, "tables", tableId, "players", persistentUser.uid);
-      await setDoc(persistentPlayerRef, updatedPlateData);
-      
-      // Try to delete old doc, but don't fail if permissions deny it
-      try {
-        await deleteDoc(doc(db, "tables", tableId, "players", anonUid));
-      } catch (docDelErr) {
-        console.warn("Could not delete old player doc (likely permissions):", docDelErr);
-      }
-
-      // Migrate Table Host
-      try {
-        const tableRef = doc(db, "tables", tableId);
-        const tableSnap = await getDoc(tableRef);
-        if (tableSnap.exists() && tableSnap.data().host === anonUid) {
-          await setDoc(tableRef, { host: persistentUser.uid }, { merge: true });
-        }
-      } catch (hostErr) {
-        console.warn("Could not migrate host:", hostErr);
-      }
-
-      // Add to Hall of Fame
-      await addDoc(collection(db, "hallOfFame"), {
-        ...updatedPlateData,
-        name: persistentUser.displayName || originalPlayerData.name,
-        hallOfFameJoinedAt: new Date(),
-        userId: persistentUser.uid,
-        originTableId: tableId
-      });
-      await setDoc(doc(db, "tables", tableId, "players", persistentUser.uid), { inHallOfFame: true }, { merge: true });
-      logEvent(getAnalytics(), 'join_hall_of_fame', { table_id: tableId });
-      
-      setMigrationData(null);
-      alert("You have been immortalized in the Hall of Fame!");
-    } catch (error) {
-      console.error("Migration failed:", error);
-      alert("Migration failed: " + error.message);
-    }
-  };
-
   const handleShare = () => {
     const shareLink = `${window.location.origin}/play?join=${tableId}`;
     navigator.clipboard.writeText(shareLink).then(() => {
@@ -511,37 +408,20 @@ function Game() {
 
   const handleLogin = async () => {
     const provider = new GoogleAuthProvider();
-    const currentUser = auth.currentUser;
-
-    if (currentUser && currentUser.isAnonymous) {
-      // Current user is anonymous, try to link the Google account.
-      try {
-        await linkWithPopup(currentUser, provider);
-        // Success! The anonymous account is now a permanent account.
-      } catch (error) {
-        if (error.code === 'auth/credential-already-in-use') {
-          setLoginConflict(true);
-        } else {
-          console.error("Login/link failed:", error);
-          alert("Login failed: " + error.message);
+    try {
+      // Try to link the current anonymous account with Google first
+      if (auth.currentUser && auth.currentUser.isAnonymous) {
+        try {
+          await linkWithPopup(auth.currentUser, provider);
+          return; // Success, stay on current user
+        } catch (linkError) {
+          if (linkError.code !== 'auth/credential-already-in-use') {
+            throw linkError;
+          }
+          // If account exists, fall through to normal sign-in (switches user)
         }
       }
-    } else {
-      // No user or user is not anonymous, just do a normal sign-in.
-      try {
-        await signInWithPopup(auth, provider);
-      } catch (error) {
-        console.error("Login failed:", error);
-        alert("Login failed: " + error.message);
-      }
-    }
-  };
-
-  const resolveLoginConflict = async () => {
-    const provider = new GoogleAuthProvider();
-    try {
       await signInWithPopup(auth, provider);
-      setLoginConflict(false);
     } catch (error) {
       console.error("Login failed:", error);
       alert("Login failed: " + error.message);
@@ -566,6 +446,16 @@ function Game() {
     if (!window.confirm("Delete this table and all its plates? This cannot be undone.")) return;
     
     try {
+      // Cleanup Hall of Fame entries associated with this table
+      try {
+        const hofQuery = query(collection(db, "hallOfFame"), where("originTableId", "==", tId));
+        const hofSnap = await getDocs(hofQuery);
+        const hofPromises = hofSnap.docs.map(d => deleteDoc(d.ref));
+        await Promise.all(hofPromises);
+      } catch (err) {
+        console.error("Error cleaning up Hall of Fame for table:", err);
+      }
+
       const playersSnap = await getDocs(collection(db, "tables", tId, "players"));
       const promises = playersSnap.docs.map(async (p) => {
         try { await deleteObject(ref(storage, `plates/${tId}/${p.id}.jpg`)); } catch(err) {}
@@ -585,7 +475,11 @@ function Game() {
     if (!window.confirm("Are you sure you want to delete this plate? This cannot be undone.")) return;
 
     try {
-      await deleteDoc(doc(db, "tables", tableId, "players", targetUserId));
+      const plateRef = doc(db, "tables", tableId, "players", targetUserId);
+      const plateSnap = await getDoc(plateRef);
+      const plateData = plateSnap.exists() ? plateSnap.data() : null;
+
+      await deleteDoc(plateRef);
       
       // Attempt to delete the photo from storage
       const storageRef = ref(storage, `plates/${tableId}/${targetUserId}.jpg`);
@@ -593,6 +487,35 @@ function Game() {
         await deleteObject(storageRef);
       } catch (e) {
         console.log("Storage delete error (ignore):", e);
+      }
+
+      // Remove from Hall of Fame if present to prevent broken images
+      try {
+        const hofQuery = query(collection(db, "hallOfFame"), where("originTableId", "==", tableId), where("userId", "==", targetUserId));
+        const hofSnap = await getDocs(hofQuery);
+        const deletePromises = hofSnap.docs.map(d => deleteDoc(d.ref));
+        await Promise.all(deletePromises);
+      } catch (err) {
+        console.error("Error cleaning up Hall of Fame:", err);
+      }
+
+      // Cleanup ghosts: Find and delete any duplicate plates (from failed migrations)
+      // that match the exact submission time and score.
+      if (plateData && plateData.submittedAt) {
+        try {
+          const q = query(collection(db, "tables", tableId, "players"), where("submittedAt", "==", plateData.submittedAt));
+          const querySnapshot = await getDocs(q);
+          const deletePromises = [];
+          querySnapshot.forEach((d) => {
+            if (d.id !== targetUserId && d.data().score === plateData.score) {
+              deletePromises.push(deleteDoc(d.ref));
+              deletePromises.push(deleteObject(ref(storage, `plates/${tableId}/${d.id}.jpg`)).catch(() => {}));
+            }
+          });
+          if (deletePromises.length > 0) await Promise.all(deletePromises);
+        } catch (ghostErr) {
+          console.warn("Ghost cleanup warning:", ghostErr);
+        }
       }
     } catch (error) {
       console.error("Error deleting plate:", error);
@@ -683,42 +606,6 @@ function Game() {
                     <i className="fas fa-user-plus text-sm"></i>
                 </div>
                 <span className="font-bold">{toastMessage}</span>
-            </div>
-        )}
-
-        {migrationData && (
-            <div className="fixed inset-0 bg-black/80 flex items-center justify-center z-[100] p-4">
-                <div className="bg-white p-8 rounded-2xl text-center max-w-sm shadow-2xl">
-                    <i className="fas fa-exchange-alt text-4xl text-rose-600 mb-4"></i>
-                    <h3 className="text-xl font-bold mb-2">Account Switch Required</h3>
-                    <p className="text-gray-600 mb-6 text-sm">
-                        This Google account is already in use. Click below to sign in and move your plate to your existing account.
-                    </p>
-                    <div className="flex gap-3 justify-center">
-                        <button onClick={() => setMigrationData(null)} className="px-4 py-2 text-slate-500 font-bold hover:text-slate-700">Cancel</button>
-                        <button onClick={continueMigration} className="bg-rose-600 text-white px-6 py-2 rounded-full font-bold hover:bg-rose-700 shadow-lg">
-                            Sign In & Migrate
-                        </button>
-                    </div>
-                </div>
-            </div>
-        )}
-
-        {loginConflict && (
-            <div className="fixed inset-0 bg-black/80 flex items-center justify-center z-[100] p-4">
-                <div className="bg-white p-8 rounded-2xl text-center max-w-sm shadow-2xl">
-                    <i className="fas fa-user-lock text-4xl text-rose-600 mb-4"></i>
-                    <h3 className="text-xl font-bold mb-2">Account Exists</h3>
-                    <p className="text-gray-600 mb-6 text-sm">
-                        This Google account is already linked to another user. Sign in with that account instead?
-                    </p>
-                    <div className="flex gap-3 justify-center">
-                        <button onClick={() => setLoginConflict(false)} className="px-4 py-2 text-slate-500 font-bold hover:text-slate-700">Cancel</button>
-                        <button onClick={resolveLoginConflict} className="bg-rose-600 text-white px-6 py-2 rounded-full font-bold hover:bg-rose-700 shadow-lg">
-                            Yes, Sign In
-                        </button>
-                    </div>
-                </div>
             </div>
         )}
     </div>

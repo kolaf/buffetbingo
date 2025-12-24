@@ -4,6 +4,7 @@ import { db, auth } from '../firebase';
 import { collection, query, orderBy, limit, getDocs, deleteDoc, doc, updateDoc } from 'firebase/firestore';
 import { onAuthStateChanged } from 'firebase/auth';
 import { BADGES } from '../constants/badges';
+import PlateCard from './PlateCard';
 
 const HallOfFame = () => {
   const [plates, setPlates] = useState([]);
@@ -96,36 +97,13 @@ const HallOfFame = () => {
         ) : (
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-8">
             {plates.map((plate, index) => (
-              <div key={plate.id} className="bg-slate-800 rounded-2xl overflow-hidden border border-slate-700 shadow-xl hover:border-rose-500/50 transition group">
-                <div className="h-64 relative overflow-hidden">
-                  <img src={plate.photoUrl} alt="Plate" className="w-full h-full object-cover transition duration-700 group-hover:scale-110" />
-                  <div className="absolute top-0 left-0 bg-black/60 text-white px-4 py-2 rounded-br-2xl font-bold backdrop-blur-sm border-r border-b border-white/10">
-                    #{index +1}
-                  </div>
-                  <div className="absolute bottom-0 inset-x-0 bg-gradient-to-t from-slate-900 to-transparent h-20"></div>
-                  {user && user.uid === plate.userId && (
-                    <button 
-                      onClick={() => handleDelete(plate.id)}
-                      className="absolute top-2 right-2 w-8 h-8 flex items-center justify-center bg-black/50 hover:bg-rose-600 text-white rounded-full backdrop-blur-sm transition z-20"
-                      title="Delete from Hall of Fame"
-                    >
-                      <i className="fas fa-trash-alt text-xs"></i>
-                    </button>
-                  )}
-                </div>
-                <div className="p-6 relative">
-                  <div className="absolute -top-8 right-4 bg-slate-900 rounded-full p-1 border border-slate-700">
-                    <div className={`w-14 h-14 rounded-full flex items-center justify-center text-xl font-bold border-4 ${parseFloat(plate.score) >= 9 ? 'border-yellow-400 text-yellow-400' : 'border-rose-500 text-rose-500'} bg-slate-800`}>
-                      {plate.score}
-                    </div>
-                  </div>
-                  
-                  <h3 className="text-xl font-bold text-white mb-1">{plate.name}</h3>
-                  <p className="text-slate-400 text-xs mb-4">
-                    {plate.submittedAt?.seconds ? new Date(plate.submittedAt.seconds * 1000).toLocaleDateString() : 'Unknown Date'}
-                  </p>
-                </div>
-              </div>
+              <PlateCard 
+                key={plate.id} 
+                plate={plate} 
+                rank={index + 1} 
+                theme="dark"
+                onDelete={user && user.uid === plate.userId ? handleDelete : null}
+              />
             ))}
           </div>
         )}
