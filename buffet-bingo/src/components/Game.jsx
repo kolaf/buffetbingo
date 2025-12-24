@@ -28,6 +28,7 @@ function Game() {
   const [pendingJoinId, setPendingJoinId] = useState(null);
   const [toastMessage, setToastMessage] = useState(null);
   const [isTableClosed, setIsTableClosed] = useState(false);
+  const [currentTableName, setCurrentTableName] = useState("");
 
   // 1. Auth
   useEffect(() => {
@@ -205,6 +206,7 @@ function Game() {
       setHostId(null);
       setShortCode("");
       setIsTableClosed(false);
+      setCurrentTableName("");
       return;
     }
     const unsub = onSnapshot(doc(db, "tables", tableId), (snap) => {
@@ -213,6 +215,7 @@ function Game() {
         setHostId(data.host);
         setShortCode(data.shortCode);
         setIsTableClosed(data.status === 'closed');
+        setCurrentTableName(data.name || "");
       }
     });
     return unsub;
@@ -518,6 +521,7 @@ function Game() {
                     setIsScoring={setIsScoring}
                     deletePlate={deletePlate}
                     addToHallOfFame={addToHallOfFame}
+                    tableName={currentTableName}
                 />
             )}
         </div>

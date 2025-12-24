@@ -11,12 +11,18 @@ const Scoreboard = ({
   closeTable,
   setIsScoring,
   deletePlate,
-  addToHallOfFame
+  addToHallOfFame,
+  tableName
 }) => {
   return (
     <div>
       <div className="flex flex-col sm:flex-row justify-between items-center mb-8 gap-4">
         <div>
+          {tableName && (
+            <h1 className="text-3xl font-bold text-rose-600 mb-1" style={{ fontFamily: "'Fredoka', sans-serif" }}>
+              {tableName}
+            </h1>
+          )}
           <h2 className="text-2xl font-bold text-slate-900">Live Scoreboard</h2>
           <p className={`${isTableClosed ? "text-rose-600 font-bold" : "text-slate-500"}`}>
             {isTableClosed ? "Table Closed" : "Waiting for plates..."}
