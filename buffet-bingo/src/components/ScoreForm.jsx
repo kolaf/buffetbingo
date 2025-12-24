@@ -67,6 +67,7 @@ const ScoreForm = ({ tableId, user, onComplete, currentName }) => {
       const photoUrl = await getDownloadURL(storageRef);
 
       await setDoc(doc(db, "tables", tableId, "players", user.uid), {
+        uid: user.uid,
         name: currentName || user.displayName || "Ninja Guest",
         score: finalScore.toFixed(1),
         photoUrl: photoUrl,

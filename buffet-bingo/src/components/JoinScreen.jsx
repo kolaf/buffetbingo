@@ -9,7 +9,8 @@ const JoinScreen = ({
   joinCode,
   setJoinCode,
   pendingJoinId,
-  myTables,
+  hostedTables,
+  visitedTables,
   handleLogin,
   handleLogout,
   createTable,
@@ -103,24 +104,54 @@ const JoinScreen = ({
           {user ? <><i className="fas fa-plus-circle mr-2"></i> Create New Table</> : "Connecting..."}
         </button>
 
-        {myTables.length > 0 && (
-          <div className="mt-8 pt-6 border-t border-slate-100">
-            <h3 className="text-sm font-bold text-slate-400 uppercase tracking-wider mb-4">Your Tables</h3>
-            <div className="space-y-2 max-h-48 overflow-y-auto">
-              {myTables.map(t => (
-                <div key={t.id} onClick={() => onSelectTable(t.id)} className="flex justify-between items-center p-3 bg-slate-50 rounded-xl hover:bg-rose-50 cursor-pointer transition group">
-                  <div className="text-left">
-                    <div className="font-mono font-bold text-slate-700">{t.name || t.shortCode || t.id}</div>
-                    <div className="text-xs text-slate-400">{t.createdAt?.seconds ? new Date(t.createdAt.seconds * 1000).toLocaleDateString() : 'Unknown date'}</div>
-                  </div>
-                  <button
-                    onClick={(e) => deleteFullTable(t.id, e)}
-                    className="w-8 h-8 flex items-center justify-center rounded-full text-slate-300 hover:bg-rose-100 hover:text-rose-600 transition"
-                  >
-                    <i className="fas fa-trash-alt text-xs"></i>
-                  </button>
+        {(hostedTables.length > 0 || visitedTables.length > 0) && (
+          <div className="mt-8 pt-6 border-t border-slate-100 text-left">
+            
+            {hostedTables.length > 0 && (
+              <div className="mb-6">
+                <h3 className="text-sm font-bold text-slate-400 uppercase tracking-wider mb-3">Hosted Tables</h3>
+                <div className="space-y-2 max-h-48 overflow-y-auto">
+                  {hostedTables.map(t => (
+                    <div key={t.id} onClick={() => onSelectTable(t.id)} className="flex justify-between items-center p-3 bg-slate-50 rounded-xl hover:bg-rose-50 cursor-pointer transition group">
+                      <div className="text-left">
+                        <div className="font-mono font-bold text-slate-700">{t.name || t.shortCode || t.id}</div>
+                        <div className="text-xs text-slate-400">{t.createdAt?.seconds ? new Date(t.createdAt.seconds * 1000).toLocaleDateString() : 'Unknown date'}</div>
+                      </div>
+                      <button
+                        onClick={(e) => deleteFullTable(t.id, e)}
+                        className="w-8 h-8 flex items-center justify-center rounded-full text-slate-300 hover:bg-rose-100 hover:text-rose-600 transition"
+                      >
+                        <i className="fas fa-trash-alt text-xs"></i>
+                      </button>
+                    </div>
+                  ))}
                 </div>
-              ))}
+              </div>
+            )}
+
+            {visitedTables.length > 0 && (
+              <div>
+                <h3 className="text-sm font-bold text-slate-400 uppercase tracking-wider mb-3">Visited Tables</h3>
+                <div className="space-y-2 max-h-48 overflow-y-auto">
+                  {visitedTables.map(t => (
+                    <div key={t.id} onClick={() => onSelectTable(t.id)} className="flex justify-between items-center p-3 bg-slate-50 rounded-xl hover:bg-rose-50 cursor-pointer transition group">
+                      <div className="text-left">
+                        <div className="font-mono font-bold text-slate-700">{t.name || t.shortCode || t.id}</div>
+                        <div className="text-xs text-slate-400">{t.createdAt?.seconds ? new Date(t.createdAt.seconds * 1000).toLocaleDateString() : 'Unknown date'}</div>
+                      </div>
+                      <div className="text-slate-300 px-2">
+                        <i className="fas fa-chevron-right text-xs"></i>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+
+            <div className="text-center mt-4">
+              <span className="text-[10px] text-slate-300">
+                Tables expire after 14 days
+              </span>
             </div>
           </div>
         )}

@@ -4,7 +4,7 @@ import { auth, db, storage } from '../firebase';
 import { signInAnonymously, onAuthStateChanged, GoogleAuthProvider, linkWithPopup, signInWithPopup, signOut } from 'firebase/auth';
 import {
   doc, setDoc, getDoc, onSnapshot, collection,
-  addDoc, query, orderBy, deleteDoc, where, getDocs, serverTimestamp
+  addDoc, query, orderBy, deleteDoc, where, getDocs, serverTimestamp, collectionGroup
 } from 'firebase/firestore';
 import { ref, uploadBytes, getDownloadURL, deleteObject } from 'firebase/storage';
 import { getAnalytics, logEvent } from "firebase/analytics";
@@ -26,7 +26,8 @@ function Game() {
   const [tableName, setTableName] = useState("");
   const [joinCode, setJoinCode] = useState("");
   const [hostId, setHostId] = useState(null);
-  const [myTables, setMyTables] = useState([]);
+  const [hostedTables, setHostedTables] = useState([]);
+  const [visitedTables, setVisitedTables] = useState([]);
   const [copied, setCopied] = useState(false);
   const [pendingJoinId, setPendingJoinId] = useState(null);
   const [toastMessage, setToastMessage] = useState(null);
@@ -103,7 +104,7 @@ function Game() {
     localStorage.setItem('buffetBingo_playerName', playerName);
   }, [playerName]);
 
-  // 1.7 Fetch User's Tables
+  // 1.7 Fetch User's Hosted Tables
   useEffect(() => {
     if (user && !user.isAnonymous) {
       const q = query(collection(db, "tables"), where("host", "==", user.uid), orderBy("createdAt", "desc"));
@@ -115,11 +116,49 @@ function Game() {
             const isRecent = (now - createdAt) < TABLE_EXPIRY_MS;
             return t.name || (t.shortCode && isRecent);
           });
-        setMyTables(tables);
+        setHostedTables(tables);
       });
       return unsubscribe;
     } else {
-      setMyTables([]);
+      setHostedTables([]);
+    }
+  }, [user]);
+
+  // 1.7b Fetch Visited Tables (Contributed to)
+  useEffect(() => {
+    if (user && !user.isAnonymous) {
+      // Requires Collection Group Index on 'uid' for 'players' collection
+      const q = query(collectionGroup(db, "players"), where("uid", "==", user.uid));
+      
+      const unsubscribe = onSnapshot(q, async (snapshot) => {
+        const tableIds = new Set();
+        snapshot.docs.forEach(d => {
+          if (d.ref.parent.parent) tableIds.add(d.ref.parent.parent.id);
+        });
+
+        const tables = [];
+        for (const tId of tableIds) {
+          try {
+            const tSnap = await getDoc(doc(db, "tables", tId));
+            if (tSnap.exists()) {
+              const data = tSnap.data();
+              // Only include if not hosted by me (already in hostedTables)
+              if (data.host !== user.uid) {
+                const createdAt = data.createdAt?.seconds ? data.createdAt.seconds * 1000 : 0;
+                const isRecent = (Date.now() - createdAt) < TABLE_EXPIRY_MS;
+                if (data.name || (data.shortCode && isRecent)) {
+                  tables.push({ id: tSnap.id, ...data });
+                }
+              }
+            }
+          } catch (e) { console.error("Error fetching visited table:", e); }
+        }
+        tables.sort((a, b) => (b.createdAt?.seconds || 0) - (a.createdAt?.seconds || 0));
+        setVisitedTables(tables);
+      }, (error) => console.warn("Visited tables query failed (index missing?):", error));
+      return unsubscribe;
+    } else {
+      setVisitedTables([]);
     }
   }, [user]);
 
@@ -149,10 +188,10 @@ function Game() {
 
     if (!playerSnap.exists()) {
       await setDoc(playerRef, {
-        name: nameToUse, score: 0, photoUrl: null
+        name: nameToUse, score: 0, photoUrl: null, uid: user.uid
       });
-    } else if (playerName) {
-      await setDoc(playerRef, { name: playerName }, { merge: true });
+    } else {
+      await setDoc(playerRef, { uid: user.uid, ...(playerName ? { name: playerName } : {}) }, { merge: true });
     }
   };
 
@@ -275,7 +314,7 @@ function Game() {
 
       // Add self to sub-collection
       await setDoc(doc(db, "tables", guid, "players", user.uid), {
-        name: user.displayName || playerName || "Host (You)", score: 0, photoUrl: null
+        name: user.displayName || playerName || "Host (You)", score: 0, photoUrl: null, uid: user.uid
       });
       setTableId(guid);
       localStorage.setItem('buffetBingo_tableId', guid);
@@ -463,7 +502,7 @@ function Game() {
       });
       await Promise.all(promises);
       await deleteDoc(doc(db, "tables", tId));
-      setMyTables(prev => prev.filter(t => t.id !== tId));
+      setHostedTables(prev => prev.filter(t => t.id !== tId));
     } catch (error) {
       console.error("Delete failed", error);
       alert("Failed to delete table");
@@ -475,21 +514,7 @@ function Game() {
     if (!window.confirm("Are you sure you want to delete this plate? This cannot be undone.")) return;
 
     try {
-      const plateRef = doc(db, "tables", tableId, "players", targetUserId);
-      const plateSnap = await getDoc(plateRef);
-      const plateData = plateSnap.exists() ? plateSnap.data() : null;
-
-      await deleteDoc(plateRef);
-      
-      // Attempt to delete the photo from storage
-      const storageRef = ref(storage, `plates/${tableId}/${targetUserId}.jpg`);
-      try {
-        await deleteObject(storageRef);
-      } catch (e) {
-        console.log("Storage delete error (ignore):", e);
-      }
-
-      // Remove from Hall of Fame if present to prevent broken images
+      // 1. Remove from Hall of Fame first to prevent broken images
       try {
         const hofQuery = query(collection(db, "hallOfFame"), where("originTableId", "==", tableId), where("userId", "==", targetUserId));
         const hofSnap = await getDocs(hofQuery);
@@ -497,6 +522,22 @@ function Game() {
         await Promise.all(deletePromises);
       } catch (err) {
         console.error("Error cleaning up Hall of Fame:", err);
+      }
+
+      // 2. Get plate data for ghost cleanup check
+      const plateRef = doc(db, "tables", tableId, "players", targetUserId);
+      const plateSnap = await getDoc(plateRef);
+      const plateData = plateSnap.exists() ? plateSnap.data() : null;
+
+      // 3. Delete the plate document
+      await deleteDoc(plateRef);
+      
+      // 4. Attempt to delete the photo from storage
+      const storageRef = ref(storage, `plates/${tableId}/${targetUserId}.jpg`);
+      try {
+        await deleteObject(storageRef);
+      } catch (e) {
+        console.log("Storage delete error (ignore):", e);
       }
 
       // Cleanup ghosts: Find and delete any duplicate plates (from failed migrations)
@@ -568,7 +609,8 @@ function Game() {
                     joinCode={joinCode}
                     setJoinCode={setJoinCode}
                     pendingJoinId={pendingJoinId}
-                    myTables={myTables}
+                    hostedTables={hostedTables}
+                    visitedTables={visitedTables}
                     handleLogin={handleLogin}
                     handleLogout={handleLogout}
                     createTable={createTable}
