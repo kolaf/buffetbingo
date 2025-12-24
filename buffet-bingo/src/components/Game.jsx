@@ -369,7 +369,7 @@ function Game() {
           }
           const plateDataToMigrate = anonPlayerSnap.data();
 
-          alert("This Google account is already in use. We will sign you in and migrate your plate to your existing account.");
+          // alert("This Google account is already in use. We will sign you in and migrate your plate to your existing account.");
 
           try {
             const result = await signInWithPopup(auth, provider);
