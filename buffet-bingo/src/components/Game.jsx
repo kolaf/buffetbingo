@@ -4,7 +4,7 @@ import { auth, db, storage } from '../firebase';
 import { signInAnonymously, onAuthStateChanged, GoogleAuthProvider, linkWithPopup, signInWithPopup, signOut } from 'firebase/auth';
 import {
   doc, setDoc, getDoc, onSnapshot, collection,
-  addDoc, query, orderBy, deleteDoc, where, getDocs, serverTimestamp, collectionGroup
+  addDoc, query, orderBy, deleteDoc, where, getDocs, serverTimestamp
 } from 'firebase/firestore';
 import { ref, uploadBytes, getDownloadURL, deleteObject } from 'firebase/storage';
 import { getAnalytics, logEvent } from "firebase/analytics";
@@ -127,17 +127,15 @@ function Game() {
   // 1.7b Fetch Visited Tables (Contributed to)
   useEffect(() => {
     if (user && !user.isAnonymous) {
-      // Requires Collection Group Index on 'uid' for 'players' collection
-      const q = query(collectionGroup(db, "players"), where("uid", "==", user.uid));
+      let active = true;
+      // Query users/{uid}/visited instead of collectionGroup to avoid permission errors
+      const q = query(collection(db, "users", user.uid, "visited"), orderBy("joinedAt", "desc"));
       
       const unsubscribe = onSnapshot(q, async (snapshot) => {
-        const tableIds = new Set();
-        snapshot.docs.forEach(d => {
-          if (d.ref.parent.parent) tableIds.add(d.ref.parent.parent.id);
-        });
+        if (!active) return;
+        const tableIds = snapshot.docs.map(d => d.id);
 
-        const tables = [];
-        for (const tId of tableIds) {
+        const promises = tableIds.map(async (tId) => {
           try {
             const tSnap = await getDoc(doc(db, "tables", tId));
             if (tSnap.exists()) {
@@ -147,16 +145,26 @@ function Game() {
                 const createdAt = data.createdAt?.seconds ? data.createdAt.seconds * 1000 : 0;
                 const isRecent = (Date.now() - createdAt) < TABLE_EXPIRY_MS;
                 if (data.name || (data.shortCode && isRecent)) {
-                  tables.push({ id: tSnap.id, ...data });
+                  return { id: tSnap.id, ...data };
                 }
               }
             }
           } catch (e) { console.error("Error fetching visited table:", e); }
+          return null;
+        });
+
+        const results = await Promise.all(promises);
+        if (active) {
+          const tables = results.filter(t => t !== null);
+          tables.sort((a, b) => (b.createdAt?.seconds || 0) - (a.createdAt?.seconds || 0));
+          setVisitedTables(tables);
         }
-        tables.sort((a, b) => (b.createdAt?.seconds || 0) - (a.createdAt?.seconds || 0));
-        setVisitedTables(tables);
-      }, (error) => console.warn("Visited tables query failed (index missing?):", error));
-      return unsubscribe;
+      }, (error) => console.warn("Visited tables query failed:", error));
+      
+      return () => {
+        active = false;
+        unsubscribe();
+      };
     } else {
       setVisitedTables([]);
     }
@@ -192,6 +200,16 @@ function Game() {
       });
     } else {
       await setDoc(playerRef, { uid: user.uid, ...(playerName ? { name: playerName } : {}) }, { merge: true });
+    }
+
+    // Add to user's visited history
+    try {
+      await setDoc(doc(db, "users", user.uid, "visited", tId), {
+        joinedAt: serverTimestamp(),
+        tableId: tId
+      }, { merge: true });
+    } catch (err) {
+      console.error("Error updating visited history:", err);
     }
   };
 
@@ -316,6 +334,17 @@ function Game() {
       await setDoc(doc(db, "tables", guid, "players", user.uid), {
         name: user.displayName || playerName || "Host (You)", score: 0, photoUrl: null, uid: user.uid
       });
+
+      // Add to user's visited history
+      try {
+        await setDoc(doc(db, "users", user.uid, "visited", guid), {
+          joinedAt: serverTimestamp(),
+          tableId: guid
+        }, { merge: true });
+      } catch (err) {
+        console.error("Error updating visited history:", err);
+      }
+
       setTableId(guid);
       localStorage.setItem('buffetBingo_tableId', guid);
       localStorage.setItem('buffetBingo_timestamp', new Date().getTime().toString());
