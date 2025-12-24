@@ -407,18 +407,7 @@ const BuffetBingo = () => {
                             <i className={`${badge.icon} text-2xl mb-2 ${badge.color}`}></i>
                             <h4 className="font-bold text-sm">{badge.name}</h4>
                             <p className="text-[10px] text-gray-500">
-                                {badge.name === 'Ghost Protocol' && 'Never spotted by your Guide.'}
-                                {badge.name === 'Guide-ception' && 'Guide followed a stranger too.'}
-                                {badge.name === 'Sauce Alchemist' && 'Recreated a complex sauce.'}
-                                {badge.name === 'Spicy Sneeze' && 'Mirrored a high-heat plate.'}
-                                {badge.name === 'Double Mirror' && 'Two players picked the same Guide.'}
-                                {badge.name === 'Grandma Whisperer' && 'Found the secret homemade gem.'}
-                                {badge.name === 'Tower of Babel' && 'Mirrored a 4" tall vertical stack.'}
-                                {badge.name === 'Dessert First' && 'Followed the guide to cake town.'}
-                                {badge.name === 'The Toddler Trap' && 'Followed a child. Deep regret.'}
-                                {badge.name === 'Clean Sweep' && 'Finished a 10/10 plate entirely.'}
-                                {badge.name === 'Iron Stomach' && 'Survived a chaotic Vacationer plate.'}
-                                {badge.name === 'Finishing Move' && 'Left an absolutely spotless plate.'}
+                                {badge.description}
                             </p>
                         </div>
                     ))}
